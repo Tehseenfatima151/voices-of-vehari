@@ -1,12 +1,10 @@
 import axios from 'axios';
-import fallbackData from './fallbackData';
 
 // Base API URL from Vite environment variable or proxy fallback
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,6 +27,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      // If unauthorized on an admin route, remove stored token
       if (window.location.pathname.startsWith('/admin') && !window.location.pathname.includes('/login')) {
         localStorage.removeItem('vov_admin_token');
         localStorage.removeItem('vov_admin_user');
@@ -40,89 +39,41 @@ apiClient.interceptors.response.use(
 );
 
 export const api = {
-  // Check whether backend is live
-  checkBackendHealth: async () => {
-    try {
-      const res = await apiClient.get('/health', { timeout: 2500 });
-      return res.status === 200;
-    } catch {
-      return false;
-    }
-  },
-
-  // ================= PUBLIC ENDPOINTS (WITH GRACEFUL FALLBACK) =================
+  // ================= PUBLIC ENDPOINTS =================
   getPublicAll: async () => {
-    try {
-      const res = await apiClient.get('/api/public/all', { timeout: 3500 });
-      if (res.data && res.data.data) {
-        return res.data.data;
-      }
-      return fallbackData;
-    } catch (err) {
-      console.warn('Voices of Vehari API unreachable. Rendering with local fallback content.', err?.message || err);
-      return fallbackData;
-    }
+    const res = await apiClient.get('/api/public/all');
+    return res.data.data;
   },
 
   getPublicPodcasts: async (params) => {
-    try {
-      const res = await apiClient.get('/api/public/podcasts', { params, timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return fallbackData.podcasts;
-    }
+    const res = await apiClient.get('/api/public/podcasts', { params });
+    return res.data.data;
   },
 
   getPublicStories: async () => {
-    try {
-      const res = await apiClient.get('/api/public/stories', { timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return fallbackData.stories;
-    }
+    const res = await apiClient.get('/api/public/stories');
+    return res.data.data;
   },
 
   getPublicGallery: async () => {
-    try {
-      const res = await apiClient.get('/api/public/gallery', { timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return fallbackData.gallery;
-    }
+    const res = await apiClient.get('/api/public/gallery');
+    return res.data.data;
   },
 
   getPublicTeam: async () => {
-    try {
-      const res = await apiClient.get('/api/public/team', { timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return fallbackData.team;
-    }
+    const res = await apiClient.get('/api/public/team');
+    return res.data.data;
   },
 
   submitContact: async (data) => {
-    try {
-      const res = await apiClient.post('/api/public/contact', data, { timeout: 5000 });
-      return res.data;
-    } catch (err) {
-      if (!err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED' || (err.response && err.response.status >= 500)) {
-        throw new Error('Contact submission service is temporarily offline. Please reach out to the project team directly at info@voicesofvehari.edu.pk.');
-      }
-      throw new Error(err.response?.data?.message || 'Error submitting message. Please try again.');
-    }
+    const res = await apiClient.post('/api/public/contact', data);
+    return res.data;
   },
 
   // ================= AUTH ENDPOINTS =================
   login: async (credentials) => {
-    try {
-      const res = await apiClient.post('/api/auth/login', credentials, { timeout: 6000 });
-      return res.data;
-    } catch (err) {
-      if (!err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED' || (err.response && err.response.status >= 500)) {
-        throw new Error('Admin services are currently unavailable. Please try again when the backend is online.');
-      }
-      throw new Error(err.response?.data?.message || 'Invalid username or password');
-    }
+    const res = await apiClient.post('/api/auth/login', credentials);
+    return res.data;
   },
 
   getMe: async () => {

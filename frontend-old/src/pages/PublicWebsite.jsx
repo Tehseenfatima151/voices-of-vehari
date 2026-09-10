@@ -4,12 +4,12 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AudioPlayer from '../components/AudioPlayer';
 import api from '../services/api';
-import fallbackData from '../services/fallbackData';
 import { useToast } from '../context/ToastContext';
 
 export const PublicWebsite = () => {
-  // Initialize with fallbackData so page renders instantaneously with zero blocking delay
-  const [data, setData] = useState(fallbackData);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // for podcast filter
   const [audioSearch, setAudioSearch] = useState(''); // for audio transcripts search
   
@@ -19,7 +19,6 @@ export const PublicWebsite = () => {
   const [contactIntent, setContactIntent] = useState('Suggest a guest');
   const [contactMessage, setContactMessage] = useState('');
   const [submittingContact, setSubmittingContact] = useState(false);
-  const [contactFeedback, setContactFeedback] = useState(null);
 
   const { addToast } = useToast();
   const location = useLocation();
@@ -29,21 +28,19 @@ export const PublicWebsite = () => {
   const currentView = (location.hash ? location.hash.replace('#', '') : 'index') || 'index';
 
   useEffect(() => {
-    let isMounted = true;
     const fetchContent = async () => {
       try {
+        setLoading(true);
         const result = await api.getPublicAll();
-        if (isMounted && result) {
-          setData(result);
-        }
+        setData(result);
       } catch (err) {
-        console.warn('Backend currently offline. Serving Voices of Vehari site via local fallback content.', err);
+        console.error('Failed to load website content:', err);
+        setError('Could not connect to the backend server. Please check if the API is running.');
+      } finally {
+        setLoading(false);
       }
     };
     fetchContent();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Update hash when clicking in-page internal links like href="about.html" or href="#about"
@@ -71,33 +68,51 @@ export const PublicWebsite = () => {
 
     try {
       setSubmittingContact(true);
-      setContactFeedback(null);
       const res = await api.submitContact({
         name: contactName,
         email: contactEmail,
         intent: contactIntent,
         message: contactMessage
       });
-      if (res && res.success) {
-        const msg = res.message || 'Thank you! Your message has been received.';
-        addToast(msg, 'success');
-        setContactFeedback({ type: 'success', message: msg });
+      if (res.success) {
+        addToast(res.message || 'Thank you! Your message has been received.', 'success');
         setContactName('');
         setContactEmail('');
         setContactMessage('');
       } else {
-        const msg = res?.message || 'Failed to submit form.';
-        addToast(msg, 'error');
-        setContactFeedback({ type: 'error', message: msg });
+        addToast(res.message || 'Failed to submit form.', 'error');
       }
     } catch (err) {
-      const msg = err.message || 'The contact service is currently offline. Please email the project team directly at info@voicesofvehari.edu.pk.';
-      addToast(msg, 'info');
-      setContactFeedback({ type: 'info', message: msg });
+      const msg = err.response?.data?.message || 'Error submitting message. Please try again.';
+      addToast(msg, 'error');
     } finally {
       setSubmittingContact(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--paper)' }}>
+        <div style={{ textAlign: 'center', color: 'var(--navy)' }}>
+          <div style={{ fontSize: '32px', marginBottom: '14px' }}>🎙️</div>
+          <h2 style={{ margin: 0, fontWeight: 800 }}>Voices of Vehari</h2>
+          <p style={{ color: 'var(--muted)', marginTop: '6px' }}>Loading dynamic content from backend...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--paper)', padding: '20px' }}>
+        <div className="card" style={{ maxWidth: '500px', textAlign: 'center' }}>
+          <h3 style={{ color: '#d9383a' }}>Connection Notice</h3>
+          <p>{error}</p>
+          <button className="btn primary" onClick={() => window.location.reload()}>Retry Connection</button>
+        </div>
+      </div>
+    );
+  }
 
   const {
     settings = {},
@@ -984,20 +999,6 @@ export const PublicWebsite = () => {
                   <button className="btn primary" type="submit" disabled={submittingContact}>
                     {submittingContact ? 'Sending Message...' : 'Send Message'}
                   </button>
-                  {contactFeedback && (
-                    <div style={{
-                      marginTop: '16px',
-                      padding: '12px 14px',
-                      borderRadius: '10px',
-                      fontSize: '13.5px',
-                      lineHeight: '1.5',
-                      background: contactFeedback.type === 'success' ? '#def7ec' : '#f4f8ff',
-                      color: contactFeedback.type === 'success' ? '#03543f' : '#1e429f',
-                      border: `1px solid ${contactFeedback.type === 'success' ? '#84e1bc' : '#b4c6fc'}`
-                    }}>
-                      {contactFeedback.message}
-                    </div>
-                  )}
                 </form>
               </div>
             </div>
