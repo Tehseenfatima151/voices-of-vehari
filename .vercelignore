@@ -1,0 +1,5 @@
+backend/
+extracted/
+frontend-old/
+scripts/
+*.html
