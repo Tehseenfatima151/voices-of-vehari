@@ -1,6 +1,0 @@
-﻿[project]
-name = "voices-of-vehari"
-version = "1.0.0"
-
-[tool.vercel]
-entrypoint = "api/index.py"
