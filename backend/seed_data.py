@@ -22,7 +22,10 @@ def seed_database(app=None):
         db.create_all()
 
         upload_dir = app.config['UPLOAD_FOLDER']
-        os.makedirs(upload_dir, exist_ok=True)
+        try:
+            os.makedirs(upload_dir, exist_ok=True)
+        except OSError:
+            pass
 
         # 1. Copy extracted images into uploads folder
         extracted_img_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'extracted', 'images'))
@@ -54,8 +57,11 @@ def seed_database(app=None):
                 src_path = os.path.join(extracted_img_dir, src_name)
                 dst_path = os.path.join(upload_dir, dst_name)
                 if os.path.exists(src_path) and not os.path.exists(dst_path):
-                    shutil.copyfile(src_path, dst_path)
-                    print(f"Copied image {src_name} -> {dst_name}")
+                    try:
+                        shutil.copyfile(src_path, dst_path)
+                        print(f"Copied image {src_name} -> {dst_name}")
+                    except OSError:
+                        pass
                 if frontend_assets_dir and os.path.exists(src_path):
                     try:
                         frontend_dst = os.path.join(frontend_assets_dir, dst_name)

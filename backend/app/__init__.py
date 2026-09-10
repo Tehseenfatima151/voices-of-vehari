@@ -9,7 +9,10 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     # Ensure uploads directory exists
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except OSError:
+        pass
 
     # Initialize extensions
     db.init_app(app)

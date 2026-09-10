@@ -6,8 +6,11 @@ app = create_app()
 
 # Initialize database tables and seed initial content
 # Runs both when imported by Gunicorn (gunicorn run:app) and when executed directly
-with app.app_context():
-    seed_database(app)
+try:
+    with app.app_context():
+        seed_database(app)
+except Exception as e:
+    print(f"[WARNING] Database initialization deferred: {e}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

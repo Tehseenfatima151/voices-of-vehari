@@ -14,7 +14,10 @@ class Config:
     # Database: Supports PostgreSQL (e.g. postgresql://...) or SQLite fallback
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
-        SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'voices_of_vehari.db')}"
+        if os.environ.get('VERCEL'):
+            SQLALCHEMY_DATABASE_URI = "sqlite:////tmp/voices_of_vehari.db"
+        else:
+            SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'voices_of_vehari.db')}"
     elif SQLALCHEMY_DATABASE_URI.startswith('postgres://'):
         # Fix for Heroku/Render legacy postgres:// URI
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace('postgres://', 'postgresql://', 1)
@@ -22,7 +25,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Uploads
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'uploads'))
+    if os.environ.get('VERCEL'):
+        UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', '/tmp/uploads')
+    else:
+        UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'uploads'))
     MAX_CONTENT_LENGTH = 30 * 1024 * 1024  # 30 MB max upload
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'}
     ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a'}
