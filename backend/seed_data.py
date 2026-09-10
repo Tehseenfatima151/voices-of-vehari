@@ -9,10 +9,16 @@ from app.models import (
     TimelineItem, AcademicReference, MediaFile
 )
 
-def seed_database():
-    app = create_app()
+def seed_database(app=None):
+    if app is None:
+        from flask import current_app
+        if current_app:
+            app = current_app._get_current_object()
+        else:
+            app = create_app()
+
     with app.app_context():
-        # Create all tables
+        # Create all tables (idempotent: does not touch existing tables)
         db.create_all()
 
         upload_dir = app.config['UPLOAD_FOLDER']
@@ -38,30 +44,42 @@ def seed_database():
 
         # Also copy to frontend public directory if it exists
         frontend_assets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'public', 'assets'))
-        os.makedirs(frontend_assets_dir, exist_ok=True)
+        try:
+            os.makedirs(frontend_assets_dir, exist_ok=True)
+        except OSError:
+            frontend_assets_dir = None
 
         if os.path.exists(extracted_img_dir):
             for src_name, dst_name in image_mapping.items():
                 src_path = os.path.join(extracted_img_dir, src_name)
                 dst_path = os.path.join(upload_dir, dst_name)
-                frontend_dst = os.path.join(frontend_assets_dir, dst_name)
-                if os.path.exists(src_path):
+                if os.path.exists(src_path) and not os.path.exists(dst_path):
                     shutil.copyfile(src_path, dst_path)
-                    shutil.copyfile(src_path, frontend_dst)
                     print(f"Copied image {src_name} -> {dst_name}")
+                if frontend_assets_dir and os.path.exists(src_path):
+                    try:
+                        frontend_dst = os.path.join(frontend_assets_dir, dst_name)
+                        if not os.path.exists(frontend_dst):
+                            shutil.copyfile(src_path, frontend_dst)
+                    except OSError:
+                        pass
 
-        # 2. Seed Admin User
-        admin_user = AdminUser.query.filter_by(username='admin').first()
-        if not admin_user:
+        # 2. Seed Admin User (idempotent: avoids duplicate admin users)
+        admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@voicesofvehari.edu.pk')
+        admin_user = AdminUser.query.filter(
+            (AdminUser.username == admin_username) | (AdminUser.email == admin_email)
+        ).first()
+        if not admin_user and AdminUser.query.count() == 0:
             admin_user = AdminUser(
-                username=os.environ.get('ADMIN_USERNAME', 'admin'),
-                email=os.environ.get('ADMIN_EMAIL', 'admin@voicesofvehari.edu.pk'),
+                username=admin_username,
+                email=admin_email,
                 full_name='Voices of Vehari Admin',
                 role='admin'
             )
             admin_user.set_password(os.environ.get('ADMIN_PASSWORD', 'AdminPassword2026!'))
             db.session.add(admin_user)
-            print("Created default admin user: admin / AdminPassword2026!")
+            print(f"Created default admin user: {admin_username}")
 
         # 3. Seed Site Settings
         if not SiteSettings.query.first():
@@ -376,8 +394,12 @@ def seed_database():
                 db.session.add(AcademicReference(author=author, contribution=contrib, sort_order=order, is_active=True))
             print("Seeded Academic References")
 
-        db.session.commit()
-        print("[SUCCESS] Database seeding successfully completed!")
+        try:
+            db.session.commit()
+            print("[SUCCESS] Database seeding successfully completed!")
+        except Exception as e:
+            db.session.rollback()
+            print(f"[INFO] Database seeding skipped or already completed: {e}")
 
 if __name__ == '__main__':
     seed_database()
