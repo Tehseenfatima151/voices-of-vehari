@@ -145,4 +145,11 @@ def submit_contact():
 
 @public_bp.route('/uploads/<path:filename>', methods=['GET'])
 def serve_upload(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    if os.path.exists(os.path.join(upload_dir, filename)):
+        return send_from_directory(upload_dir, filename)
+    # Fallback to frontend assets directory if available
+    frontend_assets = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'frontend', 'public', 'assets'))
+    if os.path.exists(os.path.join(frontend_assets, filename)):
+        return send_from_directory(frontend_assets, filename)
+    return jsonify({'success': False, 'message': 'File not found'}), 404
