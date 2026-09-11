@@ -304,7 +304,7 @@ def create_gallery_item():
         db.session.commit()
         return jsonify({'success': True, 'message': 'Gallery item added', 'data': item.to_dict()}), 201
     except Exception as e:
-        db.session.rollback()`r
+        db.session.rollback()
         return jsonify({'success': False, 'message': f'Gallery creation error: {str(e)}'}), 500
 
 @admin_cms_bp.route('/gallery/<int:id>', methods=['PUT'])
