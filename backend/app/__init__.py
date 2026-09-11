@@ -5,8 +5,8 @@ from app.extensions import db, jwt, cors
 from app.routes import auth_bp, public_bp, admin_cms_bp, upload_bp
 
 def create_app(config_class=Config):
-    # Determine frontend build dist directory
-    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+    # Determine frontend build dist directory inside backend
+    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "dist"))
 
     app = Flask(__name__, static_folder=dist_dir, static_url_path="")
     app.config.from_object(config_class)
@@ -79,6 +79,6 @@ def create_app(config_class=Config):
         if os.path.exists(index_file):
             return send_from_directory(dist_dir, 'index.html')
             
-        return jsonify({'success': False, 'message': 'Resource not found'}), 404
+        return jsonify({'success': False, 'message': 'Frontend index.html not found'}), 404
 
     return app
