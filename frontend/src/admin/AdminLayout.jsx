@@ -32,6 +32,14 @@ export const AdminLayout = () => {
 
   return (
     <div className="admin-wrapper">
+      {/* Mobile Backdrop Overlay */}
+      {mobileNavOpen && (
+        <div
+          className="admin-backdrop"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`admin-sidebar ${mobileNavOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-header">
@@ -40,6 +48,13 @@ export const AdminLayout = () => {
             <strong style={{ fontSize: '15px', color: 'white', display: 'block' }}>Voices of Vehari</strong>
             <span style={{ fontSize: '12px', color: '#88a6cb' }}>CMS Admin Panel</span>
           </div>
+          <button
+            className="admin-close-btn"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className="admin-sidebar-nav">
@@ -86,9 +101,9 @@ export const AdminLayout = () => {
         <header className="admin-topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <button
-              className="btn ghost sm"
-              style={{ display: 'none' }}
+              className="admin-mobile-hamburger"
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              aria-label="Toggle admin sidebar"
             >
               ☰
             </button>
@@ -103,14 +118,14 @@ export const AdminLayout = () => {
               className="btn ghost sm"
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <span>🌐</span> View Public Site
+              <span>🌐</span> <span className="hide-on-mobile">View Public Site</span>
             </Link>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '12px', borderLeft: '1px solid var(--line)' }}>
               <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--navy)', color: 'white', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '14px' }}>
                 {user?.username ? user.username[0].toUpperCase() : 'A'}
               </div>
-              <div>
+              <div className="hide-on-mobile">
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', display: 'block' }}>
                   {user?.full_name || user?.username || 'Administrator'}
                 </span>

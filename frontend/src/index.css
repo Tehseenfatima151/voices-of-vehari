@@ -1128,3 +1128,236 @@ h3 {
   from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ========================================================= */
+/* COMPREHENSIVE MOBILE & TABLET RESPONSIVENESS ENHANCEMENTS */
+/* ========================================================= */
+
+.desktopNavLinks {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.mobileMenuBtn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 22px;
+  color: var(--navy);
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.mobileNavDrawer {
+  display: none;
+  background: white;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.mobileNavDrawer a {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #28405f;
+  transition: background 0.2s;
+}
+
+.mobileNavDrawer a:hover,
+.mobileNavDrawer a.active {
+  background: #eaf4ff;
+  color: #0c65b8;
+}
+
+.admin-nav-pill-mobile {
+  margin-top: 6px;
+  background: #edf7f5 !important;
+  color: var(--teal) !important;
+  border: 1px solid #bce2df !important;
+  text-align: center;
+}
+
+.admin-mobile-hamburger {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 20px;
+  color: var(--navy);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.admin-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.admin-backdrop {
+  display: none;
+}
+
+/* Tablet & Mobile Breakpoint (max-width: 992px) */
+@media (max-width: 992px) {
+  .desktopNavLinks {
+    display: none;
+  }
+
+  .mobileMenuBtn {
+    display: block;
+  }
+
+  .mobileNavDrawer {
+    display: flex;
+  }
+
+  /* Admin CMS Layout Mobile */
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1100;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .admin-close-btn {
+    display: block;
+  }
+
+  .admin-mobile-hamburger {
+    display: block;
+  }
+
+  .admin-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1050;
+  }
+
+  .admin-topbar {
+    padding: 12px 18px;
+  }
+
+  .admin-content {
+    padding: 18px;
+  }
+}
+
+/* Phone & Small Tablet Breakpoint (max-width: 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 30px 0;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+    line-height: 1.15;
+  }
+
+  .lead {
+    font-size: 15px;
+  }
+
+  .actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .cards,
+  .three-col,
+  .team-grid,
+  .gallery,
+  .stat-grid,
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 550px;
+  }
+
+  .admin-grid-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .modal-box {
+    width: 95%;
+    max-height: 85vh;
+    border-radius: 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 14px 16px;
+  }
+}
+
+/* Extra Small Phones (max-width: 480px) */
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .admin-grid-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar .container {
+    font-size: 11px;
+    text-align: center;
+  }
+}

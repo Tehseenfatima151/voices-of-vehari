@@ -31,22 +31,61 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
           <a className="standaloneBrand" href="#index">
             <img src={logoSrc} alt={settings?.site_name || 'Voices of Vehari'} onError={(e) => { e.target.src = '/assets/voices_logo.png'; }} />
           </a>
-          {navLinks.map((item) => {
-            const isActive = currentHash === item.href;
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={isActive ? 'active' : ''}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-          <Link to="/admin" className="admin-nav-pill" title="Go to Admin CMS Panel">
-            ⚙ Admin CMS
-          </Link>
+
+          {/* Desktop Nav Links */}
+          <div className="desktopNavLinks">
+            {navLinks.map((item) => {
+              const isActive = currentHash === item.href;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={isActive ? 'active' : ''}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+            <Link to="/admin" className="admin-nav-pill" title="Go to Admin CMS Panel">
+              Admin CMS
+            </Link>
+          </div>
+
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            className="mobileMenuBtn"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileOpen ? '✕' : '☰'}
+          </button>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {mobileOpen && (
+          <div className="mobileNavDrawer">
+            {navLinks.map((item) => {
+              const isActive = currentHash === item.href;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={isActive ? 'active' : ''}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+            <Link
+              to="/admin"
+              className="admin-nav-pill-mobile"
+              onClick={() => setMobileOpen(false)}
+            >
+              ⚙ Go to Admin CMS Panel
+            </Link>
+          </div>
+        )}
       </div>
     </>
   );
