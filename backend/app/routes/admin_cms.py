@@ -285,23 +285,27 @@ def list_gallery():
 @admin_cms_bp.route('/gallery', methods=['POST'])
 @jwt_required()
 def create_gallery_item():
-    data = request.get_json() or {}
-    image_url = data.get('image_url')
-    if not image_url:
-        return jsonify({'success': False, 'message': 'Image URL is required'}), 400
+    try:
+        data = request.get_json() or {}
+        image_url = data.get('image_url')
+        if not image_url:
+            return jsonify({'success': False, 'message': 'Image URL is required'}), 400
 
-    item = GalleryItem(
-        title=data.get('title', 'Project Photo'),
-        caption=data.get('caption', ''),
-        category=data.get('category', 'general'),
-        image_url=image_url,
-        alt_text=data.get('alt_text', 'Voices of Vehari project visual'),
-        sort_order=int(data.get('sort_order', 0)),
-        is_published=data.get('is_published', True)
-    )
-    db.session.add(item)
-    db.session.commit()
-    return jsonify({'success': True, 'message': 'Gallery item added', 'data': item.to_dict()}), 201
+        item = GalleryItem(
+            title=data.get('title') or 'Project Photo',
+            caption=data.get('caption', ''),
+            category=data.get('category', 'general'),
+            image_url=image_url,
+            alt_text=data.get('alt_text') or 'Voices of Vehari project visual',
+            sort_order=int(data.get('sort_order', 0)),
+            is_published=bool(data.get('is_published', True))
+        )
+        db.session.add(item)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Gallery item added', 'data': item.to_dict()}), 201
+    except Exception as e:
+        db.session.rollback()`r
+        return jsonify({'success': False, 'message': f'Gallery creation error: {str(e)}'}), 500
 
 @admin_cms_bp.route('/gallery/<int:id>', methods=['PUT'])
 @jwt_required()
