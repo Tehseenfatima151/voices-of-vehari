@@ -1,11 +1,14 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from app.config import Config
 from app.extensions import db, jwt, cors
 from app.routes import auth_bp, public_bp, admin_cms_bp, upload_bp
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    # Determine frontend build dist directory
+    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+
+    app = Flask(__name__, static_folder=dist_dir, static_url_path="")
     app.config.from_object(config_class)
 
     # Ensure uploads directory exists
@@ -51,11 +54,6 @@ def create_app(config_class=Config):
             'message': 'Signature verification failed or token is malformed.'
         }), 401
 
-    # Generic Error handlers
-    @app.errorhandler(404)
-    def not_found(e):
-        return jsonify({'success': False, 'message': 'Resource not found'}), 404
-
     @app.errorhandler(500)
     def internal_error(e):
         return jsonify({'success': False, 'message': 'Internal server error'}), 500
@@ -63,5 +61,24 @@ def create_app(config_class=Config):
     @app.route('/health')
     def health_check():
         return jsonify({'status': 'healthy', 'app': 'Voices of Vehari Backend API'}), 200
+
+    # Serve React frontend for any non-API route
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_frontend(path):
+        if path.startswith('api/') or path == 'health':
+            return jsonify({'success': False, 'message': 'Resource not found'}), 404
+            
+        # If file exists in dist (e.g. assets, favicon, etc.), serve it
+        target = os.path.join(dist_dir, path)
+        if path and os.path.exists(target) and os.path.isfile(target):
+            return send_from_directory(dist_dir, path)
+            
+        # Otherwise fallback to index.html for client-side routing
+        index_file = os.path.join(dist_dir, 'index.html')
+        if os.path.exists(index_file):
+            return send_from_directory(dist_dir, 'index.html')
+            
+        return jsonify({'success': False, 'message': 'Resource not found'}), 404
 
     return app
