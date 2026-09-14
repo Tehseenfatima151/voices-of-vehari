@@ -69,13 +69,23 @@ const getInitialStrategies = () => (fallbackData.teacherGuide?.strategies || [])
   is_published: s.is_published ?? true,
 }));
 
-const getInitialPrompts = () => (fallbackData.teacherGuide?.classroomPrompts || []).map((p, i) => ({
-  id: i + 1,
-  prompt: (typeof p === 'string' ? p : (p.prompt || '')).replace(/^["'\s]+|["'\s]+$/g, ''),
-  category: 'Classroom',
-  display_order: i + 1,
-  is_published: true
-}));
+const getInitialPrompts = () => {
+  const promptCategories = [
+    'Speaking & Discussion',
+    'Oral History & Storytelling',
+    'Culture & Vocabulary',
+    'Critical Thinking & Action',
+    'Peer Discussion',
+    'Community Appreciation'
+  ];
+  return (fallbackData.teacherGuide?.classroomPrompts || []).map((p, i) => ({
+    id: i + 1,
+    prompt: (typeof p === 'string' ? p : (p.prompt || '')).replace(/^["'\s]+|["'\s]+$/g, ''),
+    category: (typeof p === 'object' && p.category) ? p.category : (promptCategories[i] || 'Classroom'),
+    display_order: i + 1,
+    is_published: true
+  }));
+};
 
 const getInitialLessonPlan = () => ({
   ...fallbackData.teacherGuide?.lessonPlanTemplate,
@@ -107,7 +117,19 @@ const buildTeacherGuidePayload = () => {
     .filter((s) => s.is_published !== false)
     .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
 
-  const rawPrompts = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+  let rawPrompts = getStorageItem('vov_cms_tg_prompts', null);
+  if (!rawPrompts || rawPrompts.length <= 1) {
+    const initial = getInitialPrompts();
+    const combined = rawPrompts ? [...rawPrompts] : [];
+    initial.forEach((initItem) => {
+      const already = combined.some(c => (c.prompt || '').toLowerCase().includes(initItem.prompt.toLowerCase().slice(0, 25)));
+      if (!already) {
+        combined.push(initItem);
+      }
+    });
+    setStorageItem('vov_cms_tg_prompts', combined);
+    rawPrompts = combined;
+  }
   const tgPrompts = rawPrompts
     .filter((p) => p.is_published !== false)
     .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
@@ -1118,7 +1140,20 @@ export const api = {
     } catch {
       // Fallback below
     }
-    return getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+    const initial = getInitialPrompts();
+    const existing = getStorageItem('vov_cms_tg_prompts', null);
+    if (!existing || existing.length <= 1) {
+      const combined = existing ? [...existing] : [];
+      initial.forEach((initItem) => {
+        const already = combined.some(c => (c.prompt || '').toLowerCase().includes(initItem.prompt.toLowerCase().slice(0, 25)));
+        if (!already) {
+          combined.push(initItem);
+        }
+      });
+      setStorageItem('vov_cms_tg_prompts', combined);
+      return combined;
+    }
+    return existing;
   },
 
   createTeacherPrompt: async (data) => {

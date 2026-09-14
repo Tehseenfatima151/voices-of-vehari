@@ -612,12 +612,12 @@ def seed_database(app=None):
         # 16. Seed Classroom Prompts
         if TeacherGuidePrompt.query.count() == 0:
             prompts_data = [
-                ('Describe a place in Vehari that is important to you.', 'Local Community', 1),
-                ('What tradition does your family enjoy?', 'Culture & Tradition', 2),
-                ('Tell your partner about a memorable school day.', 'Personal Experience', 3),
-                ('What changes would you like to see in your community?', 'Community & Society', 4),
-                ('Describe your daily routine in English.', 'Daily Life', 5),
-                ('Tell a short story about someone who inspires you.', 'Inspiration & Values', 6)
+                ('Imagine you are a local radio presenter. Describe one important issue in your community and suggest one practical solution.', 'Speaking & Discussion', 1),
+                ('Interview an elder or family member about how traditions or life in Vehari have changed over time, and summarize it in English.', 'Oral History & Storytelling', 2),
+                ('Describe your favorite local dish, bazaar, or festival to a foreign friend using five vivid sensory adjectives.', 'Culture & Vocabulary', 3),
+                ('If you received funding to start an educational community project in Vehari, what would you create and why?', 'Critical Thinking & Action', 4),
+                ('Discuss with your partner: What makes a dedicated teacher or mentor in a rural classroom, and how do they impact students?', 'Peer Discussion', 5),
+                ('Describe an artisan, farmer, or worker in your neighborhood whose craftsmanship or daily hard work inspires you.', 'Community Appreciation', 6)
             ]
             for prompt_text, cat, order in prompts_data:
                 db.session.add(TeacherGuidePrompt(

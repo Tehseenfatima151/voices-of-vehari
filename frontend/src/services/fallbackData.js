@@ -571,12 +571,12 @@ export const fallbackData = {
       },
     ],
     classroomPrompts: [
-      'Describe a place in Vehari that is important to you.',
-      'What tradition does your family enjoy?',
-      'Tell your partner about a memorable school day.',
-      'What changes would you like to see in your community?',
-      'Describe your daily routine in English.',
-      'Tell a short story about someone who inspires you.',
+      'Imagine you are a local radio presenter. Describe one important issue in your community and suggest one practical solution.',
+      'Interview an elder or family member about how traditions or life in Vehari have changed over time, and summarize it in English.',
+      'Describe your favorite local dish, bazaar, or festival to a foreign friend using five vivid sensory adjectives.',
+      'If you received funding to start an educational community project in Vehari, what would you create and why?',
+      'Discuss with your partner: What makes a dedicated teacher or mentor in a rural classroom, and how do they impact students?',
+      'Describe an artisan, farmer, or worker in your neighborhood whose craftsmanship or daily hard work inspires you.',
     ],
     lessonPlanTemplate: {
       title: 'Simple Lesson Plan Template',
