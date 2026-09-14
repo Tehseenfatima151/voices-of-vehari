@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatImageUrl, isGoogleDriveUrl } from '../utils/mediaUrlHelper';
 
 export const TeamManager = () => {
   const [team, setTeam] = useState([]);
@@ -11,12 +12,14 @@ export const TeamManager = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     role_category: 'student',
     designation: 'Student Team',
     initials: '',
+    image_url: '',
     bio: '',
     sort_order: 0,
     is_active: true,
@@ -47,6 +50,7 @@ export const TeamManager = () => {
       role_category: 'student',
       designation: 'Student Team',
       initials: '',
+      image_url: '',
       bio: '',
       sort_order: team.length + 1,
       is_active: true,
@@ -61,6 +65,7 @@ export const TeamManager = () => {
       role_category: m.role_category || 'student',
       designation: m.designation || '',
       initials: m.initials || '',
+      image_url: m.image_url || '',
       bio: m.bio || '',
       sort_order: m.sort_order || 0,
       is_active: m.is_active,
@@ -81,14 +86,39 @@ export const TeamManager = () => {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const res = await api.uploadMedia(file, `Team photo: ${formData.name || file.name}`);
+      if (res.success && res.data) {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: res.data.public_url,
+        }));
+        addToast('Team member photo uploaded!', 'success');
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Upload failed', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        image_url: formatImageUrl(formData.image_url),
+      };
       if (editingId) {
-        await api.updateTeamMember(editingId, formData);
+        await api.updateTeamMember(editingId, payload);
         addToast('Team member updated', 'success');
       } else {
-        await api.createTeamMember(formData);
+        await api.createTeamMember(payload);
         addToast('Team member added', 'success');
       }
       setModalOpen(false);
@@ -145,7 +175,7 @@ export const TeamManager = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '30px' }}>Loading members...</td>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '30px' }}>Loading team members...</td>
               </tr>
             ) : filteredTeam.length === 0 ? (
               <tr>
@@ -156,9 +186,18 @@ export const TeamManager = () => {
                 <tr key={m.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="avatar" style={{ width: '42px', height: '42px', fontSize: '14px' }}>
-                        {m.initials || 'IS'}
-                      </div>
+                      {m.image_url ? (
+                        <img
+                          src={formatImageUrl(m.image_url)}
+                          alt={m.name}
+                          style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="avatar" style={{ width: '42px', height: '42px', fontSize: '14px' }}>
+                          {m.initials || 'IS'}
+                        </div>
+                      )}
                       <strong style={{ color: 'var(--navy)' }}>{m.name}</strong>
                     </div>
                   </td>
@@ -240,6 +279,49 @@ export const TeamManager = () => {
                       placeholder="e.g. IS"
                     />
                   </div>
+                </div>
+
+                {/* Profile Photo */}
+                <div className="form-group">
+                  <label className="form-label">Profile Photo (URL, Google Drive link, or Upload)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      className="form-control"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      placeholder="https://... or Google Drive share link or /api/uploads/..."
+                    />
+                    <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      {uploading ? 'Uploading...' : 'Upload Photo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                    {isGoogleDriveUrl(formData.image_url) ? (
+                      <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                        ✓ Google Drive image detected! (Make sure link access is set to 'Anyone with the link can view')
+                      </span>
+                    ) : (
+                      <span>Supports Google Drive share links, direct photo URLs, or file uploads.</span>
+                    )}
+                  </div>
+
+                  {formData.image_url && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={formatImageUrl(formData.image_url)}
+                        alt="Preview"
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Photo Preview</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

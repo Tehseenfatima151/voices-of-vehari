@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { formatImageUrl, isGoogleDriveUrl } from '../utils/mediaUrlHelper';
 
 export const HeroManager = () => {
   const [hero, setHero] = useState({
@@ -70,7 +71,12 @@ export const HeroManager = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      const res = await api.updateHero(hero);
+      const payload = {
+        ...hero,
+        hero_image_url: formatImageUrl(hero.hero_image_url),
+        logo_float_url: formatImageUrl(hero.logo_float_url),
+      };
+      const res = await api.updateHero(payload);
       if (res.success) {
         addToast('Hero section updated successfully! View the public site to see changes.', 'success');
       }
@@ -193,14 +199,14 @@ export const HeroManager = () => {
         <div className="two-col" style={{ gap: '20px', marginTop: '10px' }}>
           {/* Hero Art */}
           <div className="form-group">
-            <label className="form-label">Hero Artwork Image</label>
+            <label className="form-label">Hero Artwork Image (URL, Google Drive link, or Upload)</label>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <input
                 name="hero_image_url"
                 className="form-control"
                 value={hero.hero_image_url}
                 onChange={handleChange}
-                placeholder="/api/uploads/..."
+                placeholder="https://... or Google Drive share link or /api/uploads/..."
               />
               <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 {uploading ? '...' : 'Upload'}
@@ -212,10 +218,19 @@ export const HeroManager = () => {
                 />
               </label>
             </div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+              {isGoogleDriveUrl(hero.hero_image_url) ? (
+                <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                  ✓ Google Drive image detected! (Make sure link access is 'Anyone with the link can view')
+                </span>
+              ) : (
+                <span>Supports Google Drive share links, direct image URLs, or file uploads.</span>
+              )}
+            </div>
             {hero.hero_image_url && (
               <div style={{ marginTop: '10px' }}>
                 <img
-                  src={hero.hero_image_url}
+                  src={formatImageUrl(hero.hero_image_url)}
                   alt="Preview"
                   style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '12px', border: '1px solid var(--line)' }}
                   onError={(e) => { e.target.src = '/assets/hero_art.jpeg'; }}
@@ -226,14 +241,14 @@ export const HeroManager = () => {
 
           {/* Floating Logo */}
           <div className="form-group">
-            <label className="form-label">Floating Artwork Logo</label>
+            <label className="form-label">Floating Artwork Logo (URL, Google Drive link, or Upload)</label>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <input
                 name="logo_float_url"
                 className="form-control"
                 value={hero.logo_float_url}
                 onChange={handleChange}
-                placeholder="/api/uploads/..."
+                placeholder="https://... or Google Drive share link or /api/uploads/..."
               />
               <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 {uploading ? '...' : 'Upload'}
@@ -245,10 +260,19 @@ export const HeroManager = () => {
                 />
               </label>
             </div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+              {isGoogleDriveUrl(hero.logo_float_url) ? (
+                <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                  ✓ Google Drive image detected!
+                </span>
+              ) : (
+                <span>Supports Google Drive share links or direct PNG/SVG URLs.</span>
+              )}
+            </div>
             {hero.logo_float_url && (
               <div style={{ marginTop: '10px' }}>
                 <img
-                  src={hero.logo_float_url}
+                  src={formatImageUrl(hero.logo_float_url)}
                   alt="Preview"
                   style={{ maxHeight: '80px', background: 'white', padding: '8px', borderRadius: '12px', border: '1px solid var(--line)' }}
                   onError={(e) => { e.target.src = '/assets/voices_logo.png'; }}

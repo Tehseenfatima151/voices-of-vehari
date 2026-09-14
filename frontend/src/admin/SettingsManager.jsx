@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { formatImageUrl, isGoogleDriveUrl } from '../utils/mediaUrlHelper';
 
 export const SettingsManager = () => {
   const [settings, setSettings] = useState({
@@ -65,7 +66,11 @@ export const SettingsManager = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      await api.updateSettings(settings);
+      const payload = {
+        ...settings,
+        logo_url: formatImageUrl(settings.logo_url),
+      };
+      await api.updateSettings(payload);
       addToast('Site settings updated successfully! View the public site to see changes.', 'success');
     } catch {
       addToast('Failed to save settings', 'error');
@@ -129,13 +134,14 @@ export const SettingsManager = () => {
 
         {/* Logo */}
         <div className="form-group">
-          <label className="form-label">Site Logo</label>
+          <label className="form-label">Site Logo (URL, Google Drive link, or Upload)</label>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <input
               name="logo_url"
               className="form-control"
               value={settings.logo_url}
               onChange={handleChange}
+              placeholder="https://... or Google Drive share link or /api/uploads/..."
             />
             <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {uploadingLogo ? '...' : 'Upload Logo'}
@@ -147,10 +153,19 @@ export const SettingsManager = () => {
               />
             </label>
           </div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+            {isGoogleDriveUrl(settings.logo_url) ? (
+              <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                ✓ Google Drive logo detected! (Ensure link access is 'Anyone with the link can view')
+              </span>
+            ) : (
+              <span>Supports Google Drive share links, direct image URLs, or PNG/SVG uploads.</span>
+            )}
+          </div>
           {settings.logo_url && (
             <div style={{ marginTop: '10px' }}>
               <img
-                src={settings.logo_url}
+                src={formatImageUrl(settings.logo_url)}
                 alt="Logo preview"
                 style={{ height: '48px', background: 'white', padding: '4px', border: '1px solid var(--line)', borderRadius: '8px' }}
                 onError={(e) => { e.target.src = '/assets/voices_logo.png'; }}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatImageUrl, isGoogleDriveUrl } from '../utils/mediaUrlHelper';
 
 export const StoriesManager = () => {
   const [stories, setStories] = useState([]);
@@ -10,6 +11,7 @@ export const StoriesManager = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -17,6 +19,7 @@ export const StoriesManager = () => {
     excerpt: '',
     content: '',
     author: 'Voices of Vehari Team',
+    image_url: '',
     is_published: true,
   });
 
@@ -46,6 +49,7 @@ export const StoriesManager = () => {
       excerpt: '',
       content: '',
       author: 'Voices of Vehari Team',
+      image_url: '',
       is_published: true,
     });
     setModalOpen(true);
@@ -59,6 +63,7 @@ export const StoriesManager = () => {
       excerpt: s.excerpt || '',
       content: s.content || '',
       author: s.author || 'Voices of Vehari Team',
+      image_url: s.image_url || '',
       is_published: s.is_published,
     });
     setModalOpen(true);
@@ -89,14 +94,39 @@ export const StoriesManager = () => {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const res = await api.uploadMedia(file, `Story image: ${formData.title || file.name}`);
+      if (res.success && res.data) {
+        setFormData((prev) => ({
+          ...prev,
+          image_url: res.data.public_url,
+        }));
+        addToast('Story image uploaded successfully!', 'success');
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Upload failed', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        image_url: formatImageUrl(formData.image_url),
+      };
       if (editingId) {
-        await api.updateStory(editingId, formData);
+        await api.updateStory(editingId, payload);
         addToast('Story updated successfully', 'success');
       } else {
-        await api.createStory(formData);
+        await api.createStory(payload);
         addToast('New story created successfully', 'success');
       }
       setModalOpen(false);
@@ -147,7 +177,21 @@ export const StoriesManager = () => {
               stories.map((s) => (
                 <tr key={s.id}>
                   <td>
-                    <strong style={{ color: 'var(--navy)' }}>{s.title}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {s.image_url ? (
+                        <img
+                          src={formatImageUrl(s.image_url)}
+                          alt={s.title}
+                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}
+                          onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
+                        />
+                      ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy)', fontWeight: 700, fontSize: '13px' }}>
+                          📖
+                        </div>
+                      )}
+                      <strong style={{ color: 'var(--navy)' }}>{s.title}</strong>
+                    </div>
                   </td>
                   <td>
                     <span className="tag" style={{ margin: 0 }}>{s.category_tag}</span>
@@ -237,6 +281,49 @@ export const StoriesManager = () => {
                       onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                     />
                   </div>
+                </div>
+
+                {/* Story Image */}
+                <div className="form-group">
+                  <label className="form-label">Story Image (URL, Google Drive link, or Upload)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      className="form-control"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      placeholder="https://... or Google Drive share link or /api/uploads/..."
+                    />
+                    <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      {uploading ? 'Uploading...' : 'Upload Image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                    {isGoogleDriveUrl(formData.image_url) ? (
+                      <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                        ✓ Google Drive image detected! (Make sure link access is set to 'Anyone with the link can view')
+                      </span>
+                    ) : (
+                      <span>Supports Google Drive share links, direct image URLs, or file uploads.</span>
+                    )}
+                  </div>
+
+                  {formData.image_url && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={formatImageUrl(formData.image_url)}
+                        alt="Preview"
+                        style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--line)' }}
+                        onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
+                      />
+                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Story Image Preview</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">

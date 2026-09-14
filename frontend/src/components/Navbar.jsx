@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { formatImageUrl } from '../utils/mediaUrlHelper';
 
 export const Navbar = ({ settings, activeHash = '#index' }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,7 +23,7 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
     { href: '#contact', label: 'Contact' },
   ];
 
-  const logoSrc = settings?.logo_url || '/assets/voices_logo.png';
+  const logoSrc = formatImageUrl(settings?.logo_url) || '/assets/voices_logo.png';
 
   return (
     <>

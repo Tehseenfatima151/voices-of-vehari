@@ -21,6 +21,14 @@ def seed_database(app=None):
         # Create all tables (idempotent: does not touch existing tables)
         db.create_all()
 
+        # Ensure new column video_url exists if table was previously created
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(db.text("ALTER TABLE podcasts ADD COLUMN video_url VARCHAR(500);"))
+                conn.commit()
+        except Exception:
+            pass
+
         upload_dir = app.config['UPLOAD_FOLDER']
         try:
             os.makedirs(upload_dir, exist_ok=True)

@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import {
+  formatImageUrl,
+  formatAudioUrl,
+  extractYouTubeId,
+  getYouTubeThumbnail,
+  isYouTubeUrl,
+  isGoogleDriveUrl
+} from '../utils/mediaUrlHelper';
 
 export const PodcastsManager = () => {
   const [podcasts, setPodcasts] = useState([]);
@@ -19,6 +27,7 @@ export const PodcastsManager = () => {
     tags: '',
     description: '',
     audio_url: '',
+    video_url: '',
     cover_image_url: '',
     is_published: true,
   });
@@ -51,6 +60,7 @@ export const PodcastsManager = () => {
       tags: 'Education, Multilingual',
       description: '',
       audio_url: '',
+      video_url: '',
       cover_image_url: '/assets/podcast_upcoming.jpeg',
       is_published: true,
     });
@@ -67,10 +77,37 @@ export const PodcastsManager = () => {
       tags: (p.tags || []).join(', '),
       description: p.description || '',
       audio_url: p.audio_url || '',
+      video_url: p.video_url || '',
       cover_image_url: p.cover_image_url || '',
       is_published: p.is_published,
     });
     setModalOpen(true);
+  };
+
+  const handleVideoUrlChange = (val) => {
+    setFormData((prev) => {
+      const next = { ...prev, video_url: val };
+      if (isYouTubeUrl(val)) {
+        const thumb = getYouTubeThumbnail(val);
+        if (thumb) {
+          // If cover is empty or is default placeholder, auto-set thumbnail
+          if (!prev.cover_image_url || prev.cover_image_url.includes('podcast_upcoming.jpeg')) {
+            next.cover_image_url = thumb;
+          }
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleFetchYoutubeThumbnail = () => {
+    const thumb = getYouTubeThumbnail(formData.video_url);
+    if (thumb) {
+      setFormData((prev) => ({ ...prev, cover_image_url: thumb }));
+      addToast('YouTube thumbnail auto-fetched!', 'success');
+    } else {
+      addToast('Please enter a valid YouTube video URL first', 'error');
+    }
   };
 
   const handleTogglePublish = async (id) => {
@@ -117,6 +154,8 @@ export const PodcastsManager = () => {
     e.preventDefault();
     const payload = {
       ...formData,
+      cover_image_url: formatImageUrl(formData.cover_image_url),
+      audio_url: formatAudioUrl(formData.audio_url),
       tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
     };
 
@@ -143,7 +182,7 @@ export const PodcastsManager = () => {
             Podcast Episodes
           </h2>
           <p style={{ color: 'var(--muted)', margin: 0 }}>
-            Manage podcast episodes, audio recordings, guest information, and categories.
+            Manage podcast episodes, audio recordings, video links (YouTube & Google Drive), and guest information.
           </p>
         </div>
         <button className="btn primary sm" onClick={openCreateModal}>
@@ -158,7 +197,7 @@ export const PodcastsManager = () => {
               <th>Episode</th>
               <th>Category</th>
               <th>Guest / Host</th>
-              <th>Audio</th>
+              <th>Media</th>
               <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -178,7 +217,7 @@ export const PodcastsManager = () => {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <img
-                        src={p.cover_image_url || '/assets/podcast_upcoming.jpeg'}
+                        src={formatImageUrl(p.cover_image_url) || '/assets/podcast_upcoming.jpeg'}
                         alt={p.title}
                         style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '10px' }}
                         onError={(e) => { e.target.src = '/assets/podcast_upcoming.jpeg'; }}
@@ -199,11 +238,18 @@ export const PodcastsManager = () => {
                     {p.host && <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Host: {p.host}</div>}
                   </td>
                   <td>
-                    {p.audio_url ? (
-                      <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: '13px' }}>✓ Audio Linked</span>
-                    ) : (
-                      <span style={{ color: 'var(--muted)', fontSize: '13px' }}>Placeholder</span>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {p.audio_url ? (
+                        <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: '12px' }}>✓ Audio</span>
+                      ) : (
+                        <span style={{ color: 'var(--muted)', fontSize: '12px' }}>Audio: None</span>
+                      )}
+                      {p.video_url && (
+                        <span style={{ color: '#0984e3', fontWeight: 700, fontSize: '12px' }}>
+                          {isYouTubeUrl(p.video_url) ? '▶ YouTube' : isGoogleDriveUrl(p.video_url) ? '📁 Drive Video' : '▶ Video'}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <button
@@ -318,6 +364,45 @@ export const PodcastsManager = () => {
                   />
                 </div>
 
+                {/* Video URL (YouTube or Google Drive) */}
+                <div className="form-group" style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 700, color: 'var(--navy)' }}>
+                      Video URL (YouTube or Google Drive)
+                    </label>
+                    {isYouTubeUrl(formData.video_url) && (
+                      <button
+                        type="button"
+                        onClick={handleFetchYoutubeThumbnail}
+                        className="btn ghost sm"
+                        style={{ padding: '2px 8px', fontSize: '11px', height: 'auto', background: '#fff' }}
+                        title="Auto-fetch video thumbnail from YouTube"
+                      >
+                        ⚡ Fetch Thumbnail
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    className="form-control"
+                    value={formData.video_url}
+                    onChange={(e) => handleVideoUrlChange(e.target.value)}
+                    placeholder="e.g. https://www.youtube.com/watch?v=... or https://drive.google.com/file/d/..."
+                  />
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '6px' }}>
+                    {isYouTubeUrl(formData.video_url) ? (
+                      <span style={{ color: '#d63031', fontWeight: 600 }}>
+                        ✓ YouTube video detected. Thumbnail auto-fetched for cover image!
+                      </span>
+                    ) : isGoogleDriveUrl(formData.video_url) ? (
+                      <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                        ✓ Google Drive video detected. Make sure link sharing is set to "Anyone with the link can view".
+                      </span>
+                    ) : (
+                      <span>Paste a YouTube or Google Drive share link to add a video player to this podcast.</span>
+                    )}
+                  </div>
+                </div>
+
                 {/* Audio URL / Upload */}
                 <div className="form-group">
                   <label className="form-label">Audio URL or Upload Recording</label>
@@ -326,7 +411,7 @@ export const PodcastsManager = () => {
                       className="form-control"
                       value={formData.audio_url}
                       onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
-                      placeholder="https://... or /api/uploads/..."
+                      placeholder="https://... or Google Drive audio link or /api/uploads/..."
                     />
                     <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       Upload Audio
@@ -338,17 +423,20 @@ export const PodcastsManager = () => {
                       />
                     </label>
                   </div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
+                    Supports direct MP3 links, Google Drive share links, or file uploads.
+                  </div>
                 </div>
 
                 {/* Cover Image */}
                 <div className="form-group">
-                  <label className="form-label">Cover Image URL or Upload</label>
+                  <label className="form-label">Cover Image (URL, Google Drive link, or Upload)</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       className="form-control"
                       value={formData.cover_image_url}
                       onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                      placeholder="/api/uploads/..."
+                      placeholder="https://... or Google Drive link or /api/uploads/..."
                     />
                     <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
                       Upload Cover
@@ -360,6 +448,21 @@ export const PodcastsManager = () => {
                       />
                     </label>
                   </div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
+                    Supports Google Drive images (public share link), YouTube thumbnails, and direct image links.
+                  </div>
+
+                  {formData.cover_image_url && (
+                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img
+                        src={formatImageUrl(formData.cover_image_url)}
+                        alt="Cover Preview"
+                        style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--line)' }}
+                        onError={(e) => { e.target.src = '/assets/podcast_upcoming.jpeg'; }}
+                      />
+                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Cover Preview</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

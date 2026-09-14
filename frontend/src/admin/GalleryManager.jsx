@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatImageUrl, isGoogleDriveUrl } from '../utils/mediaUrlHelper';
 
 export const GalleryManager = () => {
   const [gallery, setGallery] = useState([]);
@@ -67,7 +68,11 @@ export const GalleryManager = () => {
     }
 
     try {
-      await api.createGalleryItem(formData);
+      const payload = {
+        ...formData,
+        image_url: formatImageUrl(formData.image_url),
+      };
+      await api.createGalleryItem(payload);
       addToast('Image added to gallery!', 'success');
       setModalOpen(false);
       setFormData({ title: '', caption: '', category: 'general', image_url: '', alt_text: '' });
@@ -123,7 +128,7 @@ export const GalleryManager = () => {
           {gallery.map((item) => (
             <div key={item.id} className="admin-card" style={{ padding: '14px', position: 'relative' }}>
               <img
-                src={item.image_url}
+                src={formatImageUrl(item.image_url)}
                 alt={item.alt_text || item.title}
                 style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '12px' }}
                 onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
@@ -177,22 +182,33 @@ export const GalleryManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Or Image URL</label>
+                  <label className="form-label">Or Image URL / Google Drive Link</label>
                   <input
                     className="form-control"
                     value={formData.image_url}
                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    placeholder="/api/uploads/... or https://..."
+                    placeholder="https://... or Google Drive share link or /api/uploads/..."
                     required
                   />
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '5px' }}>
+                    {isGoogleDriveUrl(formData.image_url) ? (
+                      <span style={{ color: '#0984e3', fontWeight: 600 }}>
+                        ✓ Google Drive image detected! (Make sure link access is set to 'Anyone with the link can view')
+                      </span>
+                    ) : (
+                      <span>Supports Google Drive share links, direct image URLs, or file upload above.</span>
+                    )}
+                  </div>
                 </div>
 
                 {formData.image_url && (
                   <div style={{ marginBottom: '16px' }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Image Preview</label>
                     <img
-                      src={formData.image_url}
+                      src={formatImageUrl(formData.image_url)}
                       alt="Preview"
-                      style={{ maxHeight: '140px', borderRadius: '10px', border: '1px solid var(--line)' }}
+                      style={{ maxHeight: '140px', borderRadius: '10px', border: '1px solid var(--line)', display: 'block' }}
+                      onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
                     />
                   </div>
                 )}

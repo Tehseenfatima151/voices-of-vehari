@@ -6,12 +6,20 @@ import AudioPlayer from '../components/AudioPlayer';
 import api from '../services/api';
 import fallbackData from '../services/fallbackData';
 import { useToast } from '../context/ToastContext';
+import {
+  formatImageUrl,
+  formatAudioUrl,
+  getVideoEmbedUrl,
+  isYouTubeUrl,
+  isGoogleDriveUrl
+} from '../utils/mediaUrlHelper';
 
 export const PublicWebsite = () => {
   // Initialize with fallbackData so page renders instantaneously with zero blocking delay
   const [data, setData] = useState(fallbackData);
   const [activeTab, setActiveTab] = useState('all'); // for podcast filter
   const [audioSearch, setAudioSearch] = useState(''); // for audio transcripts search
+  const [activeVideoPodcast, setActiveVideoPodcast] = useState(null); // for video modal
   
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -153,13 +161,13 @@ export const PublicWebsite = () => {
               </div>
               <div className="hero-art">
                 <img
-                  src={hero.hero_image_url || '/assets/hero_art.jpeg'}
+                  src={formatImageUrl(hero.hero_image_url) || '/assets/hero_art.jpeg'}
                   alt={hero.hero_image_alt || 'Illustration of young people creating podcasts and sharing stories'}
                   onError={(e) => { e.target.src = '/assets/hero_art.jpeg'; }}
                 />
                 <div className="logo-float">
                   <img
-                    src={hero.logo_float_url || '/assets/voices_logo.png'}
+                    src={formatImageUrl(hero.logo_float_url) || '/assets/voices_logo.png'}
                     alt="Voices of Vehari"
                     onError={(e) => { e.target.src = '/assets/voices_logo.png'; }}
                   />
@@ -495,11 +503,37 @@ export const PublicWebsite = () => {
               <div className="cards">
                 {filteredPodcasts.map((pod) => (
                   <div key={pod.id} className="card media-card">
-                    <img
-                      src={pod.cover_image_url || '/assets/podcast_upcoming.jpeg'}
-                      alt={pod.title}
-                      onError={(e) => { e.target.src = '/assets/podcast_upcoming.jpeg'; }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <img
+                        src={formatImageUrl(pod.cover_image_url) || '/assets/podcast_upcoming.jpeg'}
+                        alt={pod.title}
+                        onError={(e) => { e.target.src = '/assets/podcast_upcoming.jpeg'; }}
+                      />
+                      {pod.video_url && (
+                        <div
+                          onClick={() => setActiveVideoPodcast(pod)}
+                          style={{
+                            position: 'absolute',
+                            bottom: '12px',
+                            right: '12px',
+                            background: 'rgba(232, 65, 24, 0.92)',
+                            color: '#fff',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                          }}
+                          title="Click to play video"
+                        >
+                          <span>▶</span> {isYouTubeUrl(pod.video_url) ? 'YouTube Video' : 'Watch Video'}
+                        </div>
+                      )}
+                    </div>
                     <div className="body">
                       {(pod.tags || []).map((t, ti) => (
                         <span key={ti} className="tag">{t}</span>
@@ -511,8 +545,18 @@ export const PublicWebsite = () => {
                         </p>
                       )}
                       <p>{pod.description}</p>
-                      <AudioPlayer src={pod.audio_url} />
-                      <div className="actions" style={{ marginTop: '16px' }}>
+                      <AudioPlayer src={formatAudioUrl(pod.audio_url)} />
+                      <div className="actions" style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {pod.video_url && (
+                          <button
+                            type="button"
+                            className="btn primary sm"
+                            style={{ background: '#e84118', borderColor: '#c23616' }}
+                            onClick={() => setActiveVideoPodcast(pod)}
+                          >
+                            ▶ Watch Video
+                          </button>
+                        )}
                         <a className="btn ghost sm" href="#audio-transcripts">Transcript</a>
                         <a className="btn primary sm" href="#learning">Learn from it</a>
                       </div>
@@ -559,6 +603,14 @@ export const PublicWebsite = () => {
               <div className="cards">
                 {stories.map((st) => (
                   <div key={st.id} className="card">
+                    {st.image_url && (
+                      <img
+                        src={formatImageUrl(st.image_url)}
+                        alt={st.title}
+                        style={{ width: '100%', height: '170px', objectFit: 'cover', borderRadius: '12px', marginBottom: '14px' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    )}
                     <span className="tag">{st.category_tag || 'Folklore'}</span>
                     <h3>{st.title}</h3>
                     <p>{st.excerpt}</p>
@@ -671,8 +723,18 @@ export const PublicWebsite = () => {
                     ))}
                     <h3>{pod.title}</h3>
                     {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `· Host: ${pod.host}` : ''}</p>}
-                    <AudioPlayer src={pod.audio_url} />
-                    <div className="actions" style={{ marginTop: '14px' }}>
+                    <AudioPlayer src={formatAudioUrl(pod.audio_url)} />
+                    <div className="actions" style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {pod.video_url && (
+                        <button
+                          type="button"
+                          className="btn primary sm"
+                          style={{ background: '#e84118', borderColor: '#c23616' }}
+                          onClick={() => setActiveVideoPodcast(pod)}
+                        >
+                          ▶ Watch Video
+                        </button>
+                      )}
                       <a className="btn ghost sm" href="#transcript">Open transcript</a>
                       <a className="btn ghost sm" href="#learning">Learning activity</a>
                     </div>
@@ -718,7 +780,7 @@ export const PublicWebsite = () => {
                 {gallery.map((g, i) => (
                   <img
                     key={g.id || i}
-                    src={g.image_url || '/assets/gallery_poster.jpeg'}
+                    src={formatImageUrl(g.image_url) || '/assets/gallery_poster.jpeg'}
                     alt={g.alt_text || g.title}
                     title={g.caption || g.title}
                     onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
@@ -759,7 +821,17 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(team_by_role.leadership || []).map((m) => (
                   <div key={m.id} className="person">
-                    <div className="avatar">{m.initials || 'IS'}</div>
+                    {m.image_url ? (
+                      <img
+                        src={formatImageUrl(m.image_url)}
+                        alt={m.name}
+                        className="avatar"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="avatar">{m.initials || 'IS'}</div>
+                    )}
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -778,7 +850,17 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(team_by_role.mentor || []).map((m) => (
                   <div key={m.id} className="person">
-                    <div className="avatar">{m.initials || 'MS'}</div>
+                    {m.image_url ? (
+                      <img
+                        src={formatImageUrl(m.image_url)}
+                        alt={m.name}
+                        className="avatar"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="avatar">{m.initials || 'MS'}</div>
+                    )}
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -797,7 +879,17 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(team_by_role.student || []).map((m) => (
                   <div key={m.id} className="person">
-                    <div className="avatar">{m.initials || 'ST'}</div>
+                    {m.image_url ? (
+                      <img
+                        src={formatImageUrl(m.image_url)}
+                        alt={m.name}
+                        className="avatar"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="avatar">{m.initials || 'ST'}</div>
+                    )}
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -816,7 +908,17 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(team_by_role.contributor || []).map((m) => (
                   <div key={m.id} className="person">
-                    <div className="avatar">{m.initials || 'FC'}</div>
+                    {m.image_url ? (
+                      <img
+                        src={formatImageUrl(m.image_url)}
+                        alt={m.name}
+                        className="avatar"
+                        style={{ objectFit: 'cover' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="avatar">{m.initials || 'FC'}</div>
+                    )}
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -1019,6 +1121,93 @@ export const PublicWebsite = () => {
             </div>
           </section>
         </section>
+      )}
+
+      {/* ================= VIDEO PLAYER MODAL ================= */}
+      {activeVideoPodcast && (
+        <div
+          className="modal-overlay"
+          onClick={() => setActiveVideoPodcast(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px'
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              maxWidth: '800px',
+              width: '100%',
+              background: '#fff',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+              padding: 0
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 20px',
+                borderBottom: '1px solid var(--line)',
+                background: '#f8fafc'
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--navy)' }}>{activeVideoPodcast.title}</h3>
+                {activeVideoPodcast.guest && (
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                    Guest: {activeVideoPodcast.guest} {activeVideoPodcast.host ? `· Host: ${activeVideoPodcast.host}` : ''}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setActiveVideoPodcast(null)}
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '22px',
+                  color: 'var(--navy)',
+                  lineHeight: 1,
+                  padding: '4px 8px'
+                }}
+                aria-label="Close video player"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, background: '#000' }}>
+              <iframe
+                src={getVideoEmbedUrl(activeVideoPodcast.video_url)}
+                title={activeVideoPodcast.title}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+
+            <div style={{ padding: '16px 20px', background: '#fff' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                {activeVideoPodcast.description}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       <Footer settings={settings} />

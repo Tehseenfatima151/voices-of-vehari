@@ -14,6 +14,7 @@ class Podcast(db.Model):
     category = db.Column(db.String(100), default='general') # education, culture, food, etc.
     tags_json = db.Column(db.Text, nullable=True) # JSON array e.g. ["Urdu", "Education"]
     audio_url = db.Column(db.String(500), nullable=True)
+    video_url = db.Column(db.String(500), nullable=True)
     cover_image_url = db.Column(db.String(500), nullable=True)
     transcript_url = db.Column(db.String(255), default='#transcript')
     learning_url = db.Column(db.String(255), default='learning.html')
@@ -48,6 +49,7 @@ class Podcast(db.Model):
             'category': self.category,
             'tags': self.get_tags(),
             'audio_url': self.audio_url,
+            'video_url': self.video_url,
             'cover_image_url': self.cover_image_url,
             'transcript_url': self.transcript_url,
             'learning_url': self.learning_url,

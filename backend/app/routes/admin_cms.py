@@ -141,6 +141,7 @@ def create_podcast():
         description=data.get('description', ''),
         category=data.get('category', 'general'),
         audio_url=data.get('audio_url'),
+        video_url=data.get('video_url'),
         cover_image_url=data.get('cover_image_url'),
         transcript_url=data.get('transcript_url', '#transcript'),
         learning_url=data.get('learning_url', 'learning.html'),
@@ -163,7 +164,7 @@ def update_podcast(id):
         return jsonify({'success': False, 'message': 'Podcast not found'}), 404
 
     data = request.get_json() or {}
-    for key in ['title', 'guest', 'host', 'description', 'category', 'audio_url',
+    for key in ['title', 'guest', 'host', 'description', 'category', 'audio_url', 'video_url',
                 'cover_image_url', 'transcript_url', 'learning_url', 'sort_order',
                 'is_published', 'is_featured']:
         if key in data:
