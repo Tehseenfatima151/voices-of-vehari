@@ -6,7 +6,9 @@ from app.extensions import db
 from app.models import (
     AdminUser, SiteSettings, HeroSection, SectionCard, Statistic,
     Podcast, Story, GalleryItem, TeamMember,
-    TimelineItem, AcademicReference, MediaFile
+    TimelineItem, AcademicReference, MediaFile,
+    TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
+    TeacherGuidePrompt, TeacherGuideLessonPlan
 )
 
 def seed_database(app=None):
@@ -419,6 +421,230 @@ def seed_database(app=None):
             for author, contrib, order in refs:
                 db.session.add(AcademicReference(author=author, contribution=contrib, sort_order=order, is_active=True))
             print("Seeded Academic References")
+
+        # 13. Seed Teacher Guide Articles
+        if TeacherGuideArticle.query.count() == 0:
+            articles_data = [
+                {
+                    'title': 'Teaching English Through Local Stories',
+                    'slug': 'teaching-english-through-local-stories',
+                    'category': 'Lesson Ideas',
+                    'short_description': 'A practical approach to using local stories and community experiences to develop reading, vocabulary and discussion skills.',
+                    'level': 'Intermediate',
+                    'estimated_time': '30–45 minutes',
+                    'materials': [
+                        'A short printed folk narrative or audio clip',
+                        'Guided reading sheet with vocabulary list',
+                        'Discussion cue cards'
+                    ],
+                    'steps': [
+                        'Warm-up (5 mins): Ask students if they know any oral folktales passed down by grandparents in Vehari.',
+                        'Vocabulary Preview (8 mins): Pre-teach 5-6 key English terms using pictures and local language equivalents (Saraiki/Punjabi).',
+                        'Active Reading / Listening (12 mins): Students read or listen to the local narrative in pairs, identifying characters and challenges.',
+                        'Paired Discussion (10 mins): Students answer 3 open-ended comprehension prompts regarding the story message.',
+                        'Reflection & Wrap-up (5 mins): Brief teacher-led plenary summarizing how cultural themes connect to student lives.'
+                    ],
+                    'display_order': 1
+                },
+                {
+                    'title': 'Using Cultural Traditions for Speaking Practice',
+                    'slug': 'using-cultural-traditions-for-speaking-practice',
+                    'category': 'Speaking',
+                    'short_description': 'Classroom activities that help students discuss local traditions while practicing useful English expressions and conversation skills.',
+                    'level': 'Beginner–Intermediate',
+                    'estimated_time': '25–40 minutes',
+                    'materials': [
+                        'Conversation starter strips',
+                        'Sentence frame cards (e.g., "In our family, we usually...", "The most special part is...")'
+                    ],
+                    'steps': [
+                        'Brainstorming (5 mins): Elicit local celebrations, harvests, and gatherings onto the board.',
+                        'Sentence Patterns (8 mins): Model question forms (e.g., "How do you celebrate...?", "What foods are prepared?").',
+                        'Speed Mingling (15 mins): Students circulate and interview two peers about their favourite custom in English.',
+                        'Class Sharing (8 mins): Invite volunteer pairs to summarize their partner\'s answers to the class.'
+                    ],
+                    'display_order': 2
+                },
+                {
+                    'title': 'From Personal Experience to English Writing',
+                    'slug': 'from-personal-experience-to-english-writing',
+                    'category': 'Writing',
+                    'short_description': 'A step-by-step classroom activity that helps students turn everyday experiences into short descriptive English paragraphs.',
+                    'level': 'Intermediate',
+                    'estimated_time': '40–50 minutes',
+                    'materials': [
+                        'Sensory word bank (sight, sound, smell, feel)',
+                        'Paragraph template with topic sentence, supporting details, and conclusion'
+                    ],
+                    'steps': [
+                        'Experience Recall (7 mins): Students write down 4 memories of a visit to the local bazaar or rural fields.',
+                        'Sensory Mapping (10 mins): Students map English adjectives to describe sounds, smells, and colors from their memory.',
+                        'Drafting (15 mins): Guided drafting of a 5-6 sentence descriptive paragraph.',
+                        'Peer Review (10 mins): Exchange with a partner to check past tense verbs and punctuation.',
+                        'Showcase (8 mins): Wall gallery walk or selected reading aloud.'
+                    ],
+                    'display_order': 3
+                },
+                {
+                    'title': 'Building Vocabulary from Everyday Life',
+                    'slug': 'building-vocabulary-from-everyday-life',
+                    'category': 'Vocabulary',
+                    'short_description': 'Use familiar places, objects and routines from students\' daily lives to introduce and practice new English vocabulary.',
+                    'level': 'Beginner',
+                    'estimated_time': '20–30 minutes',
+                    'materials': [
+                        'Real-life photo cards of Vehari landmarks and daily objects',
+                        'Vocabulary matching worksheet'
+                    ],
+                    'steps': [
+                        'Object Flash (5 mins): Show photos of everyday items/landmarks and ask for their English names.',
+                        'Concept Check (8 mins): Provide definition matching and example sentences in everyday context.',
+                        'Pair Challenge (10 mins): Students compose 3 sentences describing their daily walk or commute using the new words.',
+                        'Review (5 mins): Quick exit-ticket quiz.'
+                    ],
+                    'display_order': 4
+                },
+                {
+                    'title': 'Discussion Activities for Young Learners',
+                    'slug': 'discussion-activities-for-young-learners',
+                    'category': 'Speaking',
+                    'short_description': 'Simple discussion prompts designed to encourage students to express opinions, describe experiences and listen to their classmates.',
+                    'level': 'Beginner–Intermediate',
+                    'estimated_time': '25–35 minutes',
+                    'materials': [
+                        'Opinion scale cards (Agree / Disagree)',
+                        'Topic prompt cards'
+                    ],
+                    'steps': [
+                        'Icebreaker (5 mins): Model opinion expressions ("In my opinion...", "I prefer... because...").',
+                        'Corner Debate (12 mins): Present a simple scenario (e.g., "City life vs. village life in Vehari") and group students.',
+                        'Group Discussion (10 mins): Each group formulates 2 reasons supporting their viewpoint in English.',
+                        'Synthesis (5 mins): Reflect on vocabulary learned during the friendly exchange.'
+                    ],
+                    'display_order': 5
+                },
+                {
+                    'title': 'Using Student Voices in the Classroom',
+                    'slug': 'using-student-voices-in-the-classroom',
+                    'category': 'Student Engagement',
+                    'short_description': 'Strategies for making students active participants by using their own stories, opinions and experiences as learning material.',
+                    'level': 'Intermediate',
+                    'estimated_time': '30–45 minutes',
+                    'materials': [
+                        'Smartphone voice recorder (or pair speaking format)',
+                        'Interview questionnaire worksheet'
+                    ],
+                    'steps': [
+                        'Topic Selection (5 mins): Student pairs decide on a topic (e.g. favourite local dish, sports hero, memory).',
+                        'Question Prep (10 mins): Pairs draft 3 open-ended interview questions in English.',
+                        'Mock Recording (15 mins): One student acts as host, the other as guest, practicing English interview etiquette.',
+                        'Feedback (10 mins): Peers give two compliments and one gentle suggestion for pronunciation.'
+                    ],
+                    'display_order': 6
+                }
+            ]
+            for art in articles_data:
+                article = TeacherGuideArticle(
+                    title=art['title'],
+                    slug=art['slug'],
+                    category=art['category'],
+                    short_description=art['short_description'],
+                    content=art['short_description'],
+                    level=art['level'],
+                    estimated_time=art['estimated_time'],
+                    author='Voices of Vehari Team',
+                    display_order=art['display_order'],
+                    is_published=True
+                )
+                article.set_materials(art['materials'])
+                article.set_steps(art['steps'])
+                db.session.add(article)
+            print("Seeded Teacher Guide Articles")
+
+        # 14. Seed Featured Classroom Activity
+        if TeacherGuideActivity.query.count() == 0:
+            activity = TeacherGuideActivity(
+                title='Tell Your Story',
+                purpose='Help students practice speaking and narrative skills by sharing a familiar personal or local experience.',
+                estimated_time='35 minutes',
+                level='Intermediate',
+                teacher_tip='Encourage students to choose experiences from their own community, family, school or daily life.',
+                is_published=True
+            )
+            activity.set_objectives([
+                'Practice past tense',
+                'Improve speaking confidence',
+                'Build descriptive vocabulary',
+                'Develop listening skills'
+            ])
+            activity.set_steps([
+                'Choose a familiar experience (family event, visit, trip, or school memory).',
+                'Write 5–7 keywords in English related to the event.',
+                'Prepare a short 1–2 minute story with a clear beginning, middle, and end.',
+                'Share the story with a partner in English.',
+                'Ask and answer two follow-up questions with your partner.',
+                'Present the story or your partner\'s story to the class.'
+            ])
+            db.session.add(activity)
+            print("Seeded Teacher Guide Activity")
+
+        # 15. Seed Teaching Strategies
+        if TeacherGuideStrategy.query.count() == 0:
+            strategies_data = [
+                ('01', 'Start with Familiar Topics', 'Begin lessons with places, people and experiences students already understand.', '💡', 1),
+                ('02', 'Encourage Student Voice', 'Allow students to contribute their own stories and opinions.', '🎙️', 2),
+                ('03', 'Use Pair Work', 'Give students opportunities to practice English with classmates before speaking to the whole class.', '👥', 3),
+                ('04', 'Teach Vocabulary in Context', 'Introduce new words through meaningful stories and situations rather than isolated lists.', '📚', 4),
+                ('05', 'Connect Reading with Speaking', 'After reading a short text, ask students to discuss it with a partner.', '📖', 5),
+                ('06', 'Make Writing Personal', 'Let students write about real experiences before moving toward more formal writing tasks.', '✍️', 6)
+            ]
+            for num, title, desc, icon, order in strategies_data:
+                db.session.add(TeacherGuideStrategy(
+                    strategy_number=num,
+                    title=title,
+                    description=desc,
+                    icon=icon,
+                    display_order=order,
+                    is_published=True
+                ))
+            print("Seeded Teacher Guide Strategies")
+
+        # 16. Seed Classroom Prompts
+        if TeacherGuidePrompt.query.count() == 0:
+            prompts_data = [
+                ('Describe a place in Vehari that is important to you.', 'Local Community', 1),
+                ('What tradition does your family enjoy?', 'Culture & Tradition', 2),
+                ('Tell your partner about a memorable school day.', 'Personal Experience', 3),
+                ('What changes would you like to see in your community?', 'Community & Society', 4),
+                ('Describe your daily routine in English.', 'Daily Life', 5),
+                ('Tell a short story about someone who inspires you.', 'Inspiration & Values', 6)
+            ]
+            for prompt_text, cat, order in prompts_data:
+                db.session.add(TeacherGuidePrompt(
+                    prompt=prompt_text,
+                    category=cat,
+                    display_order=order,
+                    is_published=True
+                ))
+            print("Seeded Teacher Guide Prompts")
+
+        # 17. Seed Lesson Plan Template
+        if TeacherGuideLessonPlan.query.first() is None:
+            lp = TeacherGuideLessonPlan(
+                title='Simple Lesson Plan Template',
+                description='A practical, culturally-responsive lesson structure for classroom English teachers.',
+                topic='e.g. Local Harvests & Markets in Vehari',
+                learning_objective='e.g. By the end of class, students will be able to describe a market scene using 5 new sensory adjectives.',
+                english_skills='Speaking, Vocabulary, Listening, Reading',
+                vocabulary='e.g. stall, vendor, barter, fresh, bustling, fragrant',
+                warmup_activity='5-minute photo prompt & partner brainstorming of familiar local places',
+                main_activity='Contextual reading or listening from Voices of Vehari story archive',
+                pair_group_activity='Role-play interview between local vendor and customer in English',
+                assessment='Formative observation of peer interaction and 2-minute oral presentation',
+                homework='Write a 4-sentence reflection on their favorite family custom in English'
+            )
+            db.session.add(lp)
+            print("Seeded Teacher Guide Lesson Plan Template")
 
         try:
             db.session.commit()

@@ -11,6 +11,13 @@ from app.models.timeline_item import TimelineItem
 from app.models.academic_reference import AcademicReference
 from app.models.contact_submission import ContactSubmission
 from app.models.media_file import MediaFile
+from app.models.teacher_guide import (
+    TeacherGuideArticle,
+    TeacherGuideActivity,
+    TeacherGuideStrategy,
+    TeacherGuidePrompt,
+    TeacherGuideLessonPlan
+)
 
 __all__ = [
     'AdminUser',
@@ -25,5 +32,10 @@ __all__ = [
     'TimelineItem',
     'AcademicReference',
     'ContactSubmission',
-    'MediaFile'
+    'MediaFile',
+    'TeacherGuideArticle',
+    'TeacherGuideActivity',
+    'TeacherGuideStrategy',
+    'TeacherGuidePrompt',
+    'TeacherGuideLessonPlan'
 ]

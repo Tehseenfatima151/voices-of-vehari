@@ -5,7 +5,9 @@ from app.extensions import db
 from app.models import (
     SiteSettings, HeroSection, SectionCard, Statistic,
     Podcast, Story, GalleryItem, TeamMember,
-    TimelineItem, AcademicReference, ContactSubmission, MediaFile
+    TimelineItem, AcademicReference, ContactSubmission, MediaFile,
+    TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
+    TeacherGuidePrompt, TeacherGuideLessonPlan
 )
 
 admin_cms_bp = Blueprint('admin_cms', __name__, url_prefix='/api/admin')
@@ -568,3 +570,388 @@ def delete_submission(id):
     db.session.delete(sub)
     db.session.commit()
     return jsonify({'success': True, 'message': 'Submission deleted'}), 200
+
+# ================= TEACHER GUIDE: ARTICLES =================
+@admin_cms_bp.route('/teacher-guide/articles', methods=['GET'])
+@jwt_required()
+def get_teacher_articles():
+    articles = TeacherGuideArticle.query.order_by(
+        TeacherGuideArticle.display_order.asc(),
+        TeacherGuideArticle.created_at.desc()
+    ).all()
+    return jsonify({'success': True, 'data': [a.to_dict() for a in articles]}), 200
+
+@admin_cms_bp.route('/teacher-guide/articles', methods=['POST'])
+@jwt_required()
+def create_teacher_article():
+    data = request.get_json() or {}
+    title = data.get('title', '').strip()
+    if not title:
+        return jsonify({'success': False, 'message': 'Title is required'}), 400
+
+    base_slug = slugify(title) or 'teacher-guide-article'
+    slug = base_slug
+    counter = 1
+    while TeacherGuideArticle.query.filter_by(slug=slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    article = TeacherGuideArticle(
+        title=title,
+        slug=slug,
+        category=data.get('category', 'Lesson Ideas'),
+        short_description=data.get('short_description', data.get('excerpt', '')),
+        content=data.get('content', ''),
+        image_url=data.get('image_url'),
+        level=data.get('level', 'Intermediate'),
+        estimated_time=data.get('estimated_time', data.get('time', '30–45 minutes')),
+        author=data.get('author', 'Voices of Vehari Team'),
+        display_order=data.get('display_order', 0),
+        is_published=data.get('is_published', True)
+    )
+    if 'materials' in data:
+        article.set_materials(data['materials'])
+    if 'steps' in data:
+        article.set_steps(data['steps'])
+
+    db.session.add(article)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Article created successfully', 'data': article.to_dict()}), 201
+
+@admin_cms_bp.route('/teacher-guide/articles/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_teacher_article(id):
+    article = db.session.get(TeacherGuideArticle, id)
+    if not article:
+        return jsonify({'success': False, 'message': 'Article not found'}), 404
+
+    data = request.get_json() or {}
+    if 'title' in data and data['title'].strip():
+        article.title = data['title'].strip()
+    if 'category' in data:
+        article.category = data['category']
+    if 'short_description' in data:
+        article.short_description = data['short_description']
+    elif 'excerpt' in data:
+        article.short_description = data['excerpt']
+    if 'content' in data:
+        article.content = data['content']
+    if 'image_url' in data:
+        article.image_url = data['image_url']
+    if 'level' in data:
+        article.level = data['level']
+    if 'estimated_time' in data:
+        article.estimated_time = data['estimated_time']
+    elif 'time' in data:
+        article.estimated_time = data['time']
+    if 'author' in data:
+        article.author = data['author']
+    if 'display_order' in data:
+        article.display_order = data['display_order']
+    if 'is_published' in data:
+        article.is_published = data['is_published']
+
+    if 'materials' in data:
+        article.set_materials(data['materials'])
+    if 'steps' in data:
+        article.set_steps(data['steps'])
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Article updated successfully', 'data': article.to_dict()}), 200
+
+@admin_cms_bp.route('/teacher-guide/articles/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_teacher_article(id):
+    article = db.session.get(TeacherGuideArticle, id)
+    if not article:
+        return jsonify({'success': False, 'message': 'Article not found'}), 404
+
+    db.session.delete(article)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Article deleted successfully'}), 200
+
+@admin_cms_bp.route('/teacher-guide/articles/<int:id>/toggle-publish', methods=['PATCH'])
+@jwt_required()
+def toggle_teacher_article_publish(id):
+    article = db.session.get(TeacherGuideArticle, id)
+    if not article:
+        return jsonify({'success': False, 'message': 'Article not found'}), 404
+
+    article.is_published = not article.is_published
+    db.session.commit()
+    status_str = 'published' if article.is_published else 'unpublished'
+    return jsonify({'success': True, 'message': f'Article is now {status_str}', 'data': article.to_dict()}), 200
+
+# ================= TEACHER GUIDE: FEATURED ACTIVITY =================
+@admin_cms_bp.route('/teacher-guide/activities', methods=['GET'])
+@jwt_required()
+def get_teacher_activities():
+    activities = TeacherGuideActivity.query.order_by(TeacherGuideActivity.id.desc()).all()
+    return jsonify({'success': True, 'data': [a.to_dict() for a in activities]}), 200
+
+@admin_cms_bp.route('/teacher-guide/activities', methods=['POST'])
+@jwt_required()
+def create_teacher_activity():
+    data = request.get_json() or {}
+    title = data.get('title', '').strip()
+    purpose = data.get('purpose', '').strip()
+    if not title or not purpose:
+        return jsonify({'success': False, 'message': 'Title and Purpose are required'}), 400
+
+    activity = TeacherGuideActivity(
+        title=title,
+        purpose=purpose,
+        estimated_time=data.get('estimated_time', data.get('time', '35 minutes')),
+        level=data.get('level', 'Intermediate'),
+        teacher_tip=data.get('teacher_tip', data.get('teacherTip', '')),
+        image_url=data.get('image_url'),
+        is_published=data.get('is_published', True)
+    )
+    if 'objectives' in data:
+        activity.set_objectives(data['objectives'])
+    if 'steps' in data:
+        activity.set_steps(data['steps'])
+
+    db.session.add(activity)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Activity created successfully', 'data': activity.to_dict()}), 201
+
+@admin_cms_bp.route('/teacher-guide/activities/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_teacher_activity(id):
+    activity = db.session.get(TeacherGuideActivity, id)
+    if not activity:
+        return jsonify({'success': False, 'message': 'Activity not found'}), 404
+
+    data = request.get_json() or {}
+    if 'title' in data:
+        activity.title = data['title']
+    if 'purpose' in data:
+        activity.purpose = data['purpose']
+    if 'estimated_time' in data:
+        activity.estimated_time = data['estimated_time']
+    elif 'time' in data:
+        activity.estimated_time = data['time']
+    if 'level' in data:
+        activity.level = data['level']
+    if 'teacher_tip' in data:
+        activity.teacher_tip = data['teacher_tip']
+    elif 'teacherTip' in data:
+        activity.teacher_tip = data['teacherTip']
+    if 'image_url' in data:
+        activity.image_url = data['image_url']
+    if 'is_published' in data:
+        activity.is_published = data['is_published']
+
+    if 'objectives' in data:
+        activity.set_objectives(data['objectives'])
+    if 'steps' in data:
+        activity.set_steps(data['steps'])
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Activity updated successfully', 'data': activity.to_dict()}), 200
+
+@admin_cms_bp.route('/teacher-guide/activities/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_teacher_activity(id):
+    activity = db.session.get(TeacherGuideActivity, id)
+    if not activity:
+        return jsonify({'success': False, 'message': 'Activity not found'}), 404
+
+    db.session.delete(activity)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Activity deleted successfully'}), 200
+
+@admin_cms_bp.route('/teacher-guide/activities/<int:id>/toggle-publish', methods=['PATCH'])
+@jwt_required()
+def toggle_teacher_activity_publish(id):
+    activity = db.session.get(TeacherGuideActivity, id)
+    if not activity:
+        return jsonify({'success': False, 'message': 'Activity not found'}), 404
+
+    activity.is_published = not activity.is_published
+    db.session.commit()
+    status_str = 'published' if activity.is_published else 'unpublished'
+    return jsonify({'success': True, 'message': f'Activity is now {status_str}', 'data': activity.to_dict()}), 200
+
+# ================= TEACHER GUIDE: STRATEGIES =================
+@admin_cms_bp.route('/teacher-guide/strategies', methods=['GET'])
+@jwt_required()
+def get_teacher_strategies():
+    strategies = TeacherGuideStrategy.query.order_by(
+        TeacherGuideStrategy.display_order.asc(),
+        TeacherGuideStrategy.id.asc()
+    ).all()
+    return jsonify({'success': True, 'data': [s.to_dict() for s in strategies]}), 200
+
+@admin_cms_bp.route('/teacher-guide/strategies', methods=['POST'])
+@jwt_required()
+def create_teacher_strategy():
+    data = request.get_json() or {}
+    title = data.get('title', '').strip()
+    desc = data.get('description', '').strip()
+    if not title or not desc:
+        return jsonify({'success': False, 'message': 'Title and Description are required'}), 400
+
+    strategy = TeacherGuideStrategy(
+        strategy_number=data.get('strategy_number', data.get('num', '01')),
+        title=title,
+        description=desc,
+        icon=data.get('icon', '💡'),
+        display_order=data.get('display_order', 0),
+        is_published=data.get('is_published', True)
+    )
+    db.session.add(strategy)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Strategy created successfully', 'data': strategy.to_dict()}), 201
+
+@admin_cms_bp.route('/teacher-guide/strategies/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_teacher_strategy(id):
+    strategy = db.session.get(TeacherGuideStrategy, id)
+    if not strategy:
+        return jsonify({'success': False, 'message': 'Strategy not found'}), 404
+
+    data = request.get_json() or {}
+    if 'strategy_number' in data:
+        strategy.strategy_number = data['strategy_number']
+    elif 'num' in data:
+        strategy.strategy_number = data['num']
+    if 'title' in data:
+        strategy.title = data['title']
+    if 'description' in data:
+        strategy.description = data['description']
+    if 'icon' in data:
+        strategy.icon = data['icon']
+    if 'display_order' in data:
+        strategy.display_order = data['display_order']
+    if 'is_published' in data:
+        strategy.is_published = data['is_published']
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Strategy updated successfully', 'data': strategy.to_dict()}), 200
+
+@admin_cms_bp.route('/teacher-guide/strategies/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_teacher_strategy(id):
+    strategy = db.session.get(TeacherGuideStrategy, id)
+    if not strategy:
+        return jsonify({'success': False, 'message': 'Strategy not found'}), 404
+
+    db.session.delete(strategy)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Strategy deleted successfully'}), 200
+
+@admin_cms_bp.route('/teacher-guide/strategies/<int:id>/toggle-publish', methods=['PATCH'])
+@jwt_required()
+def toggle_teacher_strategy_publish(id):
+    strategy = db.session.get(TeacherGuideStrategy, id)
+    if not strategy:
+        return jsonify({'success': False, 'message': 'Strategy not found'}), 404
+
+    strategy.is_published = not strategy.is_published
+    db.session.commit()
+    status_str = 'published' if strategy.is_published else 'unpublished'
+    return jsonify({'success': True, 'message': f'Strategy is now {status_str}', 'data': strategy.to_dict()}), 200
+
+# ================= TEACHER GUIDE: PROMPTS =================
+@admin_cms_bp.route('/teacher-guide/prompts', methods=['GET'])
+@jwt_required()
+def get_teacher_prompts():
+    prompts = TeacherGuidePrompt.query.order_by(
+        TeacherGuidePrompt.display_order.asc(),
+        TeacherGuidePrompt.id.asc()
+    ).all()
+    return jsonify({'success': True, 'data': [p.to_dict() for p in prompts]}), 200
+
+@admin_cms_bp.route('/teacher-guide/prompts', methods=['POST'])
+@jwt_required()
+def create_teacher_prompt():
+    data = request.get_json() or {}
+    prompt_text = data.get('prompt', '').strip()
+    if not prompt_text:
+        return jsonify({'success': False, 'message': 'Prompt text is required'}), 400
+
+    prompt = TeacherGuidePrompt(
+        prompt=prompt_text,
+        category=data.get('category', 'General'),
+        display_order=data.get('display_order', 0),
+        is_published=data.get('is_published', True)
+    )
+    db.session.add(prompt)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Prompt created successfully', 'data': prompt.to_dict()}), 201
+
+@admin_cms_bp.route('/teacher-guide/prompts/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_teacher_prompt(id):
+    prompt = db.session.get(TeacherGuidePrompt, id)
+    if not prompt:
+        return jsonify({'success': False, 'message': 'Prompt not found'}), 404
+
+    data = request.get_json() or {}
+    if 'prompt' in data:
+        prompt.prompt = data['prompt']
+    if 'category' in data:
+        prompt.category = data['category']
+    if 'display_order' in data:
+        prompt.display_order = data['display_order']
+    if 'is_published' in data:
+        prompt.is_published = data['is_published']
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Prompt updated successfully', 'data': prompt.to_dict()}), 200
+
+@admin_cms_bp.route('/teacher-guide/prompts/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_teacher_prompt(id):
+    prompt = db.session.get(TeacherGuidePrompt, id)
+    if not prompt:
+        return jsonify({'success': False, 'message': 'Prompt not found'}), 404
+
+    db.session.delete(prompt)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Prompt deleted successfully'}), 200
+
+@admin_cms_bp.route('/teacher-guide/prompts/<int:id>/toggle-publish', methods=['PATCH'])
+@jwt_required()
+def toggle_teacher_prompt_publish(id):
+    prompt = db.session.get(TeacherGuidePrompt, id)
+    if not prompt:
+        return jsonify({'success': False, 'message': 'Prompt not found'}), 404
+
+    prompt.is_published = not prompt.is_published
+    db.session.commit()
+    status_str = 'published' if prompt.is_published else 'unpublished'
+    return jsonify({'success': True, 'message': f'Prompt is now {status_str}', 'data': prompt.to_dict()}), 200
+
+# ================= TEACHER GUIDE: LESSON PLAN TEMPLATE =================
+@admin_cms_bp.route('/teacher-guide/lesson-plan', methods=['GET'])
+@jwt_required()
+def get_teacher_lesson_plan():
+    lp = TeacherGuideLessonPlan.query.first()
+    if not lp:
+        lp = TeacherGuideLessonPlan()
+        db.session.add(lp)
+        db.session.commit()
+    return jsonify({'success': True, 'data': lp.to_dict()}), 200
+
+@admin_cms_bp.route('/teacher-guide/lesson-plan', methods=['PUT'])
+@jwt_required()
+def update_teacher_lesson_plan():
+    lp = TeacherGuideLessonPlan.query.first()
+    if not lp:
+        lp = TeacherGuideLessonPlan()
+        db.session.add(lp)
+
+    data = request.get_json() or {}
+    for field in [
+        'title', 'description', 'topic', 'learning_objective',
+        'english_skills', 'vocabulary', 'warmup_activity',
+        'main_activity', 'pair_group_activity', 'assessment', 'homework'
+    ]:
+        if field in data:
+            setattr(lp, field, data[field])
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Lesson plan template updated successfully', 'data': lp.to_dict()}), 200

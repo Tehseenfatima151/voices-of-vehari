@@ -4,7 +4,9 @@ from app.extensions import db
 from app.models import (
     SiteSettings, HeroSection, SectionCard, Statistic,
     Podcast, Story, GalleryItem, TeamMember,
-    TimelineItem, AcademicReference, ContactSubmission
+    TimelineItem, AcademicReference, ContactSubmission,
+    TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
+    TeacherGuidePrompt, TeacherGuideLessonPlan
 )
 
 public_bp = Blueprint('public', __name__, url_prefix='/api')
@@ -45,6 +47,45 @@ def get_all_public_content():
     # Academic References
     references = AcademicReference.query.filter_by(is_active=True).order_by(AcademicReference.sort_order.asc()).all()
 
+    # Teacher Guide Dynamic Data
+    tg_articles = TeacherGuideArticle.query.filter_by(is_published=True).order_by(TeacherGuideArticle.display_order.asc()).all()
+    tg_activity = TeacherGuideActivity.query.filter_by(is_published=True).order_by(TeacherGuideActivity.id.desc()).first()
+    tg_strategies = TeacherGuideStrategy.query.filter_by(is_published=True).order_by(TeacherGuideStrategy.display_order.asc()).all()
+    tg_prompts = TeacherGuidePrompt.query.filter_by(is_published=True).order_by(TeacherGuidePrompt.display_order.asc()).all()
+    tg_lesson_plan = TeacherGuideLessonPlan.query.first()
+
+    teacher_guide_payload = {
+        'hero': {
+            'heading': 'Teacher Guide',
+            'subtitle': 'Practical resources and classroom ideas for teaching English through the voices, stories and experiences of Vehari.',
+            'intro': 'The Teacher Guide provides practical classroom resources, activity ideas and teaching strategies that connect English learning with local culture, everyday experiences and student voices.',
+            'primaryCta': 'Explore Teaching Resources',
+            'secondaryCta': 'Browse Classroom Ideas',
+        },
+        'benefits': [
+            { 'icon': '📖', 'title': 'Local Stories', 'description': 'Use familiar stories and community experiences as reading and discussion material.' },
+            { 'icon': '🎙️', 'title': 'Speaking Practice', 'description': 'Turn local topics into pair and group speaking activities.' },
+            { 'icon': '📚', 'title': 'Vocabulary Building', 'description': 'Teach useful English vocabulary through familiar places, people and traditions.' },
+            { 'icon': '✍️', 'title': 'Writing Activities', 'description': 'Help students transform personal and local experiences into short English texts.' },
+            { 'icon': '💡', 'title': 'Critical Thinking', 'description': 'Encourage students to compare, discuss and reflect on cultural experiences.' },
+        ],
+        'categories': ['All', 'Lesson Ideas', 'Speaking', 'Writing', 'Reading', 'Vocabulary', 'Student Engagement'],
+        'resources': [art.to_dict() for art in tg_articles],
+        'featuredActivity': tg_activity.to_dict() if tg_activity else None,
+        'strategies': [s.to_dict() for s in tg_strategies],
+        'classroomPrompts': [p.prompt for p in tg_prompts],
+        'promptsList': [p.to_dict() for p in tg_prompts],
+        'lessonPlanTemplate': tg_lesson_plan.to_dict() if tg_lesson_plan else None,
+        'tips': [
+            'Keep instructions simple, sequential and clear.',
+            'Give students silent preparation time before asking them to speak.',
+            'Use familiar local examples to introduce difficult grammar concepts.',
+            'Encourage students to learn from each other\'s real-life experiences.',
+            'Correct important errors gently without interrupting fluency unnecessarily.',
+            'Celebrate participation, bravery and effort rather than perfection.',
+        ]
+    }
+
     return jsonify({
         'success': True,
         'data': {
@@ -58,7 +99,40 @@ def get_all_public_content():
             'team': [t.to_dict() for t in team],
             'team_by_role': team_by_role,
             'timeline': [ti.to_dict() for ti in timeline],
-            'references': [r.to_dict() for r in references]
+            'references': [r.to_dict() for r in references],
+            'teacherGuide': teacher_guide_payload
+        }
+    }), 200
+
+@public_bp.route('/public/teacher-guide', methods=['GET'])
+def get_teacher_guide_public():
+    """Standalone endpoint for teacher guide resources."""
+    category = request.args.get('category')
+    search = request.args.get('search')
+    
+    query = TeacherGuideArticle.query.filter_by(is_published=True)
+    if category and category.lower() != 'all':
+        query = query.filter(TeacherGuideArticle.category.ilike(category))
+    if search:
+        query = query.filter(
+            (TeacherGuideArticle.title.ilike(f'%{search}%')) |
+            (TeacherGuideArticle.short_description.ilike(f'%{search}%'))
+        )
+    articles = query.order_by(TeacherGuideArticle.display_order.asc()).all()
+
+    activity = TeacherGuideActivity.query.filter_by(is_published=True).order_by(TeacherGuideActivity.id.desc()).first()
+    strategies = TeacherGuideStrategy.query.filter_by(is_published=True).order_by(TeacherGuideStrategy.display_order.asc()).all()
+    prompts = TeacherGuidePrompt.query.filter_by(is_published=True).order_by(TeacherGuidePrompt.display_order.asc()).all()
+    lesson_plan = TeacherGuideLessonPlan.query.first()
+
+    return jsonify({
+        'success': True,
+        'data': {
+            'resources': [a.to_dict() for a in articles],
+            'featuredActivity': activity.to_dict() if activity else None,
+            'strategies': [s.to_dict() for s in strategies],
+            'classroomPrompts': [p.prompt for p in prompts],
+            'lessonPlanTemplate': lesson_plan.to_dict() if lesson_plan else None
         }
     }), 200
 

@@ -8,6 +8,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import HeroManager from './admin/HeroManager';
 import PodcastsManager from './admin/PodcastsManager';
 import StoriesManager from './admin/StoriesManager';
+import TeacherGuideManager from './admin/TeacherGuideManager';
 import GalleryManager from './admin/GalleryManager';
 import TeamManager from './admin/TeamManager';
 import CardsManager from './admin/CardsManager';
@@ -59,6 +60,7 @@ export const App = () => {
         <Route path="hero" element={<HeroManager />} />
         <Route path="podcasts" element={<PodcastsManager />} />
         <Route path="stories" element={<StoriesManager />} />
+        <Route path="teacher-guide" element={<TeacherGuideManager />} />
         <Route path="gallery" element={<GalleryManager />} />
         <Route path="team" element={<TeamManager />} />
         <Route path="cards" element={<CardsManager />} />

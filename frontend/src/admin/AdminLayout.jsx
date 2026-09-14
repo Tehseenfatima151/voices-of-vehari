@@ -20,6 +20,7 @@ export const AdminLayout = () => {
     { path: '/admin/hero', icon: '🌟', label: 'Home Hero' },
     { path: '/admin/podcasts', icon: '🎙️', label: 'Podcasts' },
     { path: '/admin/stories', icon: '📖', label: 'Stories' },
+    { path: '/admin/teacher-guide', icon: '📚', label: 'Teacher Guide' },
     { path: '/admin/gallery', icon: '🖼️', label: 'Gallery' },
     { path: '/admin/team', icon: '👥', label: 'Team Members' },
     { path: '/admin/cards', icon: '🗂️', label: 'Content Cards' },

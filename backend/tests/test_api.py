@@ -187,3 +187,60 @@ def test_file_upload_validation(client, auth_token):
                           data=bad_data, content_type='multipart/form-data')
     assert bad_res.status_code == 400
     assert bad_res.get_json()['success'] is False
+
+# 5. TEACHER GUIDE PUBLIC & ADMIN TESTS
+def test_teacher_guide_public_and_admin(client, auth_token):
+    # Admin: Create new Teacher Guide Article
+    create_res = client.post('/api/admin/teacher-guide/articles', headers={'Authorization': f'Bearer {auth_token}'}, json={
+        'title': 'Test Pedagogical Storytelling Guide',
+        'category': 'Speaking',
+        'short_description': 'Guide on teaching through storytelling.',
+        'content': 'Comprehensive instructions for teachers.',
+        'materials': ['Cue cards', 'Audio clips'],
+        'steps': ['Step 1: Introduction', 'Step 2: Practice'],
+        'level': 'Beginner',
+        'estimated_time': '30 mins'
+    })
+    assert create_res.status_code == 201
+    art_id = create_res.get_json()['data']['id']
+    assert create_res.get_json()['data']['title'] == 'Test Pedagogical Storytelling Guide'
+
+    # Check public all contains teacherGuide and the created article
+    res = client.get('/api/public/all')
+    assert res.status_code == 200
+    tg = res.get_json()['data']['teacherGuide']
+    assert 'resources' in tg
+    assert len(tg['resources']) > 0
+    assert tg['resources'][0]['id'] == art_id
+
+    # Standalone public endpoint
+    tg_res = client.get('/api/public/teacher-guide')
+    assert tg_res.status_code == 200
+    assert len(tg_res.get_json()['data']['resources']) > 0
+
+    # Admin: Update Article
+    update_res = client.put(f'/api/admin/teacher-guide/articles/{art_id}', headers={'Authorization': f'Bearer {auth_token}'}, json={
+        'title': 'Test Pedagogical Storytelling Guide (Updated)'
+    })
+    assert update_res.status_code == 200
+    assert update_res.get_json()['data']['title'] == 'Test Pedagogical Storytelling Guide (Updated)'
+
+    # Admin: Toggle Publish
+    toggle_res = client.patch(f'/api/admin/teacher-guide/articles/{art_id}/toggle-publish', headers={'Authorization': f'Bearer {auth_token}'})
+    assert toggle_res.status_code == 200
+    assert toggle_res.get_json()['data']['is_published'] is False
+
+    # After toggling off publish, it should not appear in public active resources
+    tg_res2 = client.get('/api/public/teacher-guide')
+    assert not any(r['id'] == art_id for r in tg_res2.get_json()['data']['resources'])
+
+    # Admin: Delete Article
+    del_res = client.delete(f'/api/admin/teacher-guide/articles/{art_id}', headers={'Authorization': f'Bearer {auth_token}'})
+    assert del_res.status_code == 200
+
+    # Admin: Test Lesson Plan template update
+    lp_res = client.put('/api/admin/teacher-guide/lesson-plan', headers={'Authorization': f'Bearer {auth_token}'}, json={
+        'topic': 'Updated Topic For Testing'
+    })
+    assert lp_res.status_code == 200
+    assert lp_res.get_json()['data']['topic'] == 'Updated Topic For Testing'

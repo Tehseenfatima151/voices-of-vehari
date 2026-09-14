@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import fallbackData from './fallbackData';
 
 // Base API URL from Vite environment variable or proxy fallback
@@ -703,6 +703,293 @@ export const api = {
       return res.data;
     } catch {
       return { success: true, message: 'Media deleted successfully' };
+    }
+  },
+
+  // ================= TEACHER GUIDE: ARTICLES =================
+  getAdminTeacherArticles: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/teacher-guide/articles');
+      return res.data.data;
+    } catch {
+      return getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+    }
+  },
+
+  createTeacherArticle: async (data) => {
+    try {
+      const res = await apiClient.post('/api/admin/teacher-guide/articles', data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+      const newArt = {
+        ...data,
+        id: Date.now(),
+        is_published: true,
+        details: {
+          objective: data.content || data.short_description,
+          materials: data.materials || [],
+          steps: data.steps || []
+        }
+      };
+      const updated = [newArt, ...list];
+      setStorageItem('vov_cms_tg_articles', updated);
+      return { success: true, message: 'Article created successfully', data: newArt };
+    }
+  },
+
+  updateTeacherArticle: async (id, data) => {
+    try {
+      const res = await apiClient.put(`/api/admin/teacher-guide/articles/${id}`, data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+      const updated = list.map((a) => {
+        if (a.id === id || a.id === Number(id)) {
+          return {
+            ...a,
+            ...data,
+            details: {
+              ...a.details,
+              objective: data.content !== undefined ? data.content : a.details?.objective,
+              materials: data.materials !== undefined ? data.materials : a.details?.materials,
+              steps: data.steps !== undefined ? data.steps : a.details?.steps,
+            }
+          };
+        }
+        return a;
+      });
+      setStorageItem('vov_cms_tg_articles', updated);
+      return { success: true, message: 'Article updated successfully' };
+    }
+  },
+
+  deleteTeacherArticle: async (id) => {
+    try {
+      const res = await apiClient.delete(`/api/admin/teacher-guide/articles/${id}`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+      const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
+      setStorageItem('vov_cms_tg_articles', updated);
+      return { success: true, message: 'Article deleted successfully' };
+    }
+  },
+
+  toggleTeacherArticlePublish: async (id) => {
+    try {
+      const res = await apiClient.patch(`/api/admin/teacher-guide/articles/${id}/toggle-publish`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+      setStorageItem('vov_cms_tg_articles', updated);
+      return { success: true, message: 'Status toggled successfully' };
+    }
+  },
+
+  // ================= TEACHER GUIDE: FEATURED ACTIVITIES =================
+  getAdminTeacherActivities: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/teacher-guide/activities');
+      return res.data.data;
+    } catch {
+      const defAct = { ...fallbackData.teacherGuide.featuredActivity, id: 1, is_published: true };
+      return getStorageItem('vov_cms_tg_activities', [defAct]);
+    }
+  },
+
+  createTeacherActivity: async (data) => {
+    try {
+      const res = await apiClient.post('/api/admin/teacher-guide/activities', data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_activities', []);
+      const newAct = { ...data, id: Date.now(), is_published: true };
+      const updated = [newAct, ...list];
+      setStorageItem('vov_cms_tg_activities', updated);
+      return { success: true, message: 'Activity created successfully', data: newAct };
+    }
+  },
+
+  updateTeacherActivity: async (id, data) => {
+    try {
+      const res = await apiClient.put(`/api/admin/teacher-guide/activities/${id}`, data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_activities', []);
+      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, ...data } : a));
+      setStorageItem('vov_cms_tg_activities', updated);
+      return { success: true, message: 'Activity updated successfully' };
+    }
+  },
+
+  deleteTeacherActivity: async (id) => {
+    try {
+      const res = await apiClient.delete(`/api/admin/teacher-guide/activities/${id}`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_activities', []);
+      const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
+      setStorageItem('vov_cms_tg_activities', updated);
+      return { success: true, message: 'Activity deleted successfully' };
+    }
+  },
+
+  toggleTeacherActivityPublish: async (id) => {
+    try {
+      const res = await apiClient.patch(`/api/admin/teacher-guide/activities/${id}/toggle-publish`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_activities', []);
+      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+      setStorageItem('vov_cms_tg_activities', updated);
+      return { success: true, message: 'Status toggled successfully' };
+    }
+  },
+
+  // ================= TEACHER GUIDE: STRATEGIES =================
+  getAdminTeacherStrategies: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/teacher-guide/strategies');
+      return res.data.data;
+    } catch {
+      return getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+    }
+  },
+
+  createTeacherStrategy: async (data) => {
+    try {
+      const res = await apiClient.post('/api/admin/teacher-guide/strategies', data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+      const newStrat = { ...data, id: Date.now(), is_published: true };
+      const updated = [...list, newStrat];
+      setStorageItem('vov_cms_tg_strategies', updated);
+      return { success: true, message: 'Strategy created successfully', data: newStrat };
+    }
+  },
+
+  updateTeacherStrategy: async (id, data) => {
+    try {
+      const res = await apiClient.put(`/api/admin/teacher-guide/strategies/${id}`, data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
+      setStorageItem('vov_cms_tg_strategies', updated);
+      return { success: true, message: 'Strategy updated successfully' };
+    }
+  },
+
+  deleteTeacherStrategy: async (id) => {
+    try {
+      const res = await apiClient.delete(`/api/admin/teacher-guide/strategies/${id}`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+      const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
+      setStorageItem('vov_cms_tg_strategies', updated);
+      return { success: true, message: 'Strategy deleted successfully' };
+    }
+  },
+
+  toggleTeacherStrategyPublish: async (id) => {
+    try {
+      const res = await apiClient.patch(`/api/admin/teacher-guide/strategies/${id}/toggle-publish`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
+      setStorageItem('vov_cms_tg_strategies', updated);
+      return { success: true, message: 'Status toggled successfully' };
+    }
+  },
+
+  // ================= TEACHER GUIDE: PROMPTS =================
+  getAdminTeacherPrompts: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/teacher-guide/prompts');
+      return res.data.data;
+    } catch {
+      const initial = (fallbackData.teacherGuide.classroomPrompts || []).map((p, i) => ({
+        id: i + 1,
+        prompt: p,
+        category: 'Classroom',
+        display_order: i + 1,
+        is_published: true
+      }));
+      return getStorageItem('vov_cms_tg_prompts', initial);
+    }
+  },
+
+  createTeacherPrompt: async (data) => {
+    try {
+      const res = await apiClient.post('/api/admin/teacher-guide/prompts', data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_prompts', []);
+      const newPrompt = { ...data, id: Date.now(), is_published: true };
+      const updated = [...list, newPrompt];
+      setStorageItem('vov_cms_tg_prompts', updated);
+      return { success: true, message: 'Prompt created successfully', data: newPrompt };
+    }
+  },
+
+  updateTeacherPrompt: async (id, data) => {
+    try {
+      const res = await apiClient.put(`/api/admin/teacher-guide/prompts/${id}`, data);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_prompts', []);
+      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
+      setStorageItem('vov_cms_tg_prompts', updated);
+      return { success: true, message: 'Prompt updated successfully' };
+    }
+  },
+
+  deleteTeacherPrompt: async (id) => {
+    try {
+      const res = await apiClient.delete(`/api/admin/teacher-guide/prompts/${id}`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_prompts', []);
+      const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
+      setStorageItem('vov_cms_tg_prompts', updated);
+      return { success: true, message: 'Prompt deleted successfully' };
+    }
+  },
+
+  toggleTeacherPromptPublish: async (id) => {
+    try {
+      const res = await apiClient.patch(`/api/admin/teacher-guide/prompts/${id}/toggle-publish`);
+      return res.data;
+    } catch {
+      const list = getStorageItem('vov_cms_tg_prompts', []);
+      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
+      setStorageItem('vov_cms_tg_prompts', updated);
+      return { success: true, message: 'Status toggled successfully' };
+    }
+  },
+
+  // ================= TEACHER GUIDE: LESSON PLAN TEMPLATE =================
+  getAdminLessonPlan: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/teacher-guide/lesson-plan');
+      return res.data.data;
+    } catch {
+      return getStorageItem('vov_cms_tg_lessonplan', fallbackData.teacherGuide.lessonPlanTemplate);
+    }
+  },
+
+  updateLessonPlan: async (data) => {
+    try {
+      const res = await apiClient.put('/api/admin/teacher-guide/lesson-plan', data);
+      return res.data;
+    } catch {
+      setStorageItem('vov_cms_tg_lessonplan', data);
+      return { success: true, message: 'Lesson plan template updated successfully', data };
     }
   },
 };
