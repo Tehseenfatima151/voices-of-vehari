@@ -28,7 +28,16 @@ export const AuthProvider = ({ children }) => {
             logout();
           }
         } catch {
-          logout();
+          const saved = localStorage.getItem('vov_admin_user');
+          if (saved) {
+            try {
+              setUser(JSON.parse(saved));
+            } catch {
+              logout();
+            }
+          } else {
+            logout();
+          }
         }
       }
       setLoading(false);

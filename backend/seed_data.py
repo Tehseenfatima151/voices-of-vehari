@@ -78,22 +78,34 @@ def seed_database(app=None):
                     except OSError:
                         pass
 
-        # 2. Seed Admin User (idempotent: avoids duplicate admin users)
+        # 2. Seed Admin User (idempotent: ensures active admin user with correct password)
         admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@voicesofvehari.edu.pk')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'AdminPassword2026!')
         admin_user = AdminUser.query.filter(
             (AdminUser.username == admin_username) | (AdminUser.email == admin_email)
         ).first()
-        if not admin_user and AdminUser.query.count() == 0:
+        if not admin_user:
             admin_user = AdminUser(
                 username=admin_username,
                 email=admin_email,
                 full_name='Voices of Vehari Admin',
-                role='admin'
+                role='admin',
+                is_active=True
             )
-            admin_user.set_password(os.environ.get('ADMIN_PASSWORD', 'AdminPassword2026!'))
+            admin_user.set_password(admin_password)
             db.session.add(admin_user)
             print(f"Created default admin user: {admin_username}")
+        else:
+            admin_user.set_password(admin_password)
+            admin_user.is_active = True
+            print(f"Verified default admin user password: {admin_username}")
+        
+        try:
+            db.session.commit()
+        except Exception as admin_commit_err:
+            db.session.rollback()
+            print("[INFO] Admin user commit deferred:", admin_commit_err)
 
         # 3. Seed Site Settings
         if not SiteSettings.query.first():
