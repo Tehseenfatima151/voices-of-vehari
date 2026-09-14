@@ -15,6 +15,7 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
     { href: '#podcasts', label: 'Podcasts' },
     { href: '#stories', label: 'Stories' },
     { href: '#learning', label: 'Learning' },
+    { href: '#teacher-guide', label: 'Teacher Guide' },
     { href: '#audio-transcripts', label: 'Audio & Transcripts' },
     { href: '#gallery', label: 'Gallery' },
     { href: '#team', label: 'Team' },
@@ -36,7 +37,8 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
           {/* Desktop Nav Links */}
           <div className="desktopNavLinks">
             {navLinks.map((item) => {
-              const isActive = currentHash === item.href;
+              const normalizedHash = currentHash.replace(/^#\/?/, '#');
+              const isActive = normalizedHash === item.href;
               return (
                 <a
                   key={item.href}
@@ -66,7 +68,8 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
         {mobileOpen && (
           <div className="mobileNavDrawer">
             {navLinks.map((item) => {
-              const isActive = currentHash === item.href;
+              const normalizedHash = currentHash.replace(/^#\/?/, '#');
+              const isActive = normalizedHash === item.href;
               return (
                 <a
                   key={item.href}

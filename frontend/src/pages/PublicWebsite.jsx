@@ -20,6 +20,9 @@ export const PublicWebsite = () => {
   const [activeTab, setActiveTab] = useState('all'); // for podcast filter
   const [audioSearch, setAudioSearch] = useState(''); // for audio transcripts search
   const [activeVideoPodcast, setActiveVideoPodcast] = useState(null); // for video modal
+  const [selectedTeacherCategory, setSelectedTeacherCategory] = useState('All'); // for teacher guide category filter
+  const [activeResourceModal, setActiveResourceModal] = useState(null); // for teacher guide read more modal
+  const [copiedPromptIndex, setCopiedPromptIndex] = useState(null); // for copy prompt toast feedback
   
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -33,8 +36,8 @@ export const PublicWebsite = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Current view based on hash (#about, #podcasts, etc.) or default to #index
-  const currentView = (location.hash ? location.hash.replace('#', '') : 'index') || 'index';
+  // Current view based on hash (#about, #podcasts, #/teacher-guide, etc.) or default to #index
+  const currentView = (location.hash ? location.hash.replace(/^#[/]?/, '') : 'index') || 'index';
 
   useEffect(() => {
     let isMounted = true;
@@ -69,6 +72,31 @@ export const PublicWebsite = () => {
     document.addEventListener('click', handleLinkClicks);
     return () => document.removeEventListener('click', handleLinkClicks);
   }, []);
+
+  // Update document title dynamically based on view
+  useEffect(() => {
+    if (currentView === 'teacher-guide') {
+      document.title = 'Teacher Guide | Voices of Vehari';
+    } else {
+      document.title = settings?.site_name ? `${settings.site_name} | Enhancing English Proficiency` : 'Voices of Vehari';
+    }
+  }, [currentView, settings]);
+
+  const handleCopyPrompt = (promptText, index) => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(promptText)
+        .then(() => {
+          setCopiedPromptIndex(index);
+          addToast('Classroom prompt copied to clipboard!', 'success');
+          setTimeout(() => setCopiedPromptIndex(null), 2500);
+        })
+        .catch(() => {
+          addToast('Could not copy to clipboard. Please copy manually.', 'error');
+        });
+    } else {
+      addToast('Classroom prompt copied to clipboard!', 'success');
+    }
+  };
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -118,8 +146,17 @@ export const PublicWebsite = () => {
     team = [],
     team_by_role = {},
     timeline = [],
-    references = []
+    references = [],
+    teacherGuide = fallbackData.teacherGuide
   } = data || {};
+
+  const tg = teacherGuide || fallbackData.teacherGuide;
+
+  // Filter teacher guide resources
+  const filteredTeacherResources = (tg?.resources || []).filter((r) => {
+    if (selectedTeacherCategory === 'All') return true;
+    return (r.category || '').toLowerCase() === selectedTeacherCategory.toLowerCase();
+  });
 
   // Filter podcasts
   const filteredPodcasts = podcasts.filter((p) => {
@@ -693,6 +730,338 @@ export const PublicWebsite = () => {
         </section>
       )}
 
+      {/* ================= TEACHER GUIDE ================= */}
+      {currentView === 'teacher-guide' && (
+        <section className="view" id="teacher-guide" style={{ display: 'block' }}>
+          {/* 1. HERO SECTION */}
+          <section className="page-hero">
+            <div className="container">
+              <span className="eyebrow" style={{ color: '#dcecff' }}>Teacher Guide & Resources</span>
+              <h1 style={{ fontSize: '2.5rem', lineHeight: 1.2, margin: '14px 0 16px' }}>
+                {tg?.hero?.title || 'Teacher Guide: Using Local Stories in the English Classroom'}
+              </h1>
+              <p className="lead" style={{ maxWidth: '840px', margin: '0 auto 16px', fontSize: '1.2rem', color: '#e0edff', fontWeight: 500 }}>
+                {tg?.hero?.subtitle || 'A practical guide for educators using community narratives, oral folklore, and local experiences to make English learning relevant, communicative, and engaging.'}
+              </p>
+              <p style={{ maxWidth: '780px', margin: '0 auto 28px', color: '#cadbf5', fontSize: '15px', lineHeight: 1.6 }}>
+                {tg?.hero?.description || 'Contextualized language teaching allows students to connect new English structures with familiar environments, reducing anxiety and dramatically improving communicative participation.'}
+              </p>
+              <div className="actions" style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <a className="btn primary" href="#teacher-resources">
+                  {tg?.hero?.primary_cta || 'Explore Teaching Resources'}
+                </a>
+                <a className="btn ghost" href="#activity-of-the-month" style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}>
+                  {tg?.hero?.secondary_cta || 'Browse Classroom Ideas'}
+                </a>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. INTRODUCTION / HOW TO USE THIS GUIDE */}
+          <section className="section">
+            <div className="container">
+              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+                <span className="eyebrow">Pedagogical Framework</span>
+                <h2>How to Use This Guide</h2>
+                <p style={{ color: 'var(--muted)', fontSize: '15px', margin: 0 }}>
+                  Five foundational pillars connecting cultural familiarity with active language acquisition.
+                </p>
+              </div>
+              <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                {(tg?.benefits || []).map((b, idx) => (
+                  <div key={idx} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '12px' }}>{b.icon}</div>
+                    <h3 style={{ fontSize: '1.15rem', marginBottom: '8px' }}>{b.title}</h3>
+                    <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.5, margin: 0, flex: 1 }}>
+                      {b.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 3. FEATURED TEACHING RESOURCES & 4. CATEGORY FILTERS */}
+          <section className="section alt" id="teacher-resources">
+            <div className="container">
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '28px', gap: '16px' }}>
+                <div>
+                  <span className="eyebrow">Classroom Library</span>
+                  <h2>Featured Teaching Resources</h2>
+                  <p style={{ color: 'var(--muted)', margin: 0, fontSize: '15px' }}>
+                    Structured, ready-to-run lesson guides adaptable for secondary and higher education.
+                  </p>
+                </div>
+                {/* Category Filter Buttons */}
+                <div className="filters" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(tg?.categories || ['All', 'Lesson Ideas', 'Speaking', 'Writing', 'Reading', 'Vocabulary', 'Student Engagement']).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`filter ${selectedTeacherCategory === cat ? 'active' : ''}`}
+                      onClick={() => setSelectedTeacherCategory(cat)}
+                      style={{
+                        padding: '7px 16px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        border: '1px solid var(--border)',
+                        background: selectedTeacherCategory === cat ? 'var(--primary, #1665c0)' : 'var(--card-bg, #fff)',
+                        color: selectedTeacherCategory === cat ? '#fff' : 'inherit',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resources Cards Grid */}
+              <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '22px' }}>
+                {filteredTeacherResources.map((res) => (
+                  <div key={res.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <span className="tag" style={{ margin: 0 }}>{res.category}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>
+                          ⏱ {res.time}
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: '1.2rem', margin: '0 0 10px', lineHeight: 1.35 }}>{res.title}</h3>
+                      <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.5, marginBottom: '14px' }}>
+                        {res.excerpt}
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'var(--muted)', marginBottom: '18px' }}>
+                        <span><strong>Target Level:</strong> {res.level}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      style={{ alignSelf: 'flex-start', marginTop: 'auto' }}
+                      onClick={() => setActiveResourceModal(res)}
+                    >
+                      📖 Read Guide & Steps
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {filteredTeacherResources.length === 0 && (
+                <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
+                  <p>No guides found under category "{selectedTeacherCategory}".</p>
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={() => setSelectedTeacherCategory('All')}
+                    style={{ marginTop: '10px' }}
+                  >
+                    Reset to All
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* 5. CLASSROOM ACTIVITY OF THE MONTH */}
+          <section className="section" id="activity-of-the-month">
+            <div className="container">
+              <div className="card" style={{ border: '2px solid rgba(22, 101, 192, 0.25)', background: 'linear-gradient(135deg, rgba(240, 247, 255, 0.9) 0%, rgba(255, 255, 255, 1) 100%)', padding: '32px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="tag" style={{ background: '#1665c0', color: '#fff', fontWeight: 600 }}>🌟 Classroom Activity of the Month</span>
+                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
+                      Level: {tg?.featuredActivity?.level || 'Intermediate'} · Duration: {tg?.featuredActivity?.time || '35 minutes'}
+                    </span>
+                  </div>
+                </div>
+
+                <h2 style={{ fontSize: '1.85rem', marginBottom: '10px' }}>{tg?.featuredActivity?.title || 'Tell Your Story'}</h2>
+                <p className="lead" style={{ fontSize: '1.05rem', color: 'var(--muted)', marginBottom: '24px' }}>
+                  {tg?.featuredActivity?.purpose || 'Help students practice speaking and narrative skills by sharing a familiar personal or local experience.'}
+                </p>
+
+                <div className="two-col" style={{ gap: '28px', marginTop: '16px' }}>
+                  <div>
+                    <h4 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#1665c0', marginBottom: '12px' }}>
+                      🎯 Learning Objectives
+                    </h4>
+                    <ul style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '14px', lineHeight: 1.8 }}>
+                      {(tg?.featuredActivity?.objectives || []).map((obj, i) => (
+                        <li key={i}>{obj}</li>
+                      ))}
+                    </ul>
+
+                    <div style={{ marginTop: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(22, 101, 192, 0.08)', borderLeft: '4px solid #1665c0' }}>
+                      <strong style={{ display: 'block', fontSize: '13px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px' }}>💡 Teacher Tip</strong>
+                      <p style={{ margin: 0, fontSize: '13.5px', color: '#2d3748', lineHeight: 1.5 }}>
+                        {tg?.featuredActivity?.teacherTip || 'Encourage students to choose experiences from their own community, family, school or daily life.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#1665c0', marginBottom: '12px' }}>
+                      📋 Step-by-Step Procedure
+                    </h4>
+                    <ol style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '14px', lineHeight: 1.8 }}>
+                      {(tg?.featuredActivity?.steps || []).map((step, i) => (
+                        <li key={i} style={{ marginBottom: '6px' }}>{step}</li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 6. PRACTICAL TEACHING STRATEGIES */}
+          <section className="section alt">
+            <div className="container">
+              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+                <span className="eyebrow">Methodology in Action</span>
+                <h2>Practical Teaching Strategies</h2>
+                <p style={{ color: 'var(--muted)', fontSize: '15px', margin: 0 }}>
+                  Six evidence-informed techniques for contextualized English pedagogy.
+                </p>
+              </div>
+              <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                {(tg?.strategies || []).map((strat) => (
+                  <div key={strat.num} className="card">
+                    <span style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1665c0', opacity: 0.8, display: 'block', marginBottom: '8px' }}>
+                      {strat.num}
+                    </span>
+                    <h3 style={{ fontSize: '1.15rem', marginBottom: '8px' }}>{strat.title}</h3>
+                    <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.5, margin: 0 }}>
+                      {strat.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 7. READY-TO-USE CLASSROOM PROMPTS */}
+          <section className="section">
+            <div className="container">
+              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+                <span className="eyebrow">Discussion Starters</span>
+                <h2>Ready-to-Use Classroom Prompts</h2>
+                <p style={{ color: 'var(--muted)', fontSize: '15px', margin: 0 }}>
+                  Click "Copy Prompt" to instantly copy questions to clipboard for slides, board work, or worksheets.
+                </p>
+              </div>
+              <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
+                {(tg?.classroomPrompts || []).map((prompt, pIdx) => (
+                  <div
+                    key={pIdx}
+                    className="card"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      background: '#fafbfc',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '1.2rem', color: '#1665c0', flexShrink: 0 }}>💬</span>
+                      <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px', color: '#2d3748', lineHeight: 1.5, fontWeight: 500 }}>
+                        "{prompt}"
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      onClick={() => handleCopyPrompt(prompt, pIdx)}
+                      style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '6px 12px' }}
+                    >
+                      {copiedPromptIndex === pIdx ? '✓ Copied!' : '📋 Copy Prompt'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 8. LESSON PLAN TEMPLATE */}
+          <section className="section alt">
+            <div className="container">
+              <div className="card" style={{ maxWidth: '860px', margin: '0 auto', padding: '36px', border: '1px dashed #1665c0', background: '#fff' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #edf2f7', paddingBottom: '18px', marginBottom: '24px', gap: '12px' }}>
+                  <div>
+                    <span className="tag" style={{ background: '#e0edff', color: '#1665c0', fontWeight: 600 }}>Teacher Planning Tool</span>
+                    <h3 style={{ fontSize: '1.5rem', margin: '8px 0 4px' }}>{tg?.lessonPlanTemplate?.title || 'Simple Lesson Plan Template'}</h3>
+                    <p style={{ color: 'var(--muted)', fontSize: '14px', margin: 0 }}>{tg?.lessonPlanTemplate?.description}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn primary sm"
+                    onClick={() => window.print()}
+                  >
+                    🖨 Print / Save Template
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                  {(tg?.lessonPlanTemplate?.fields || []).map((fld, fIdx) => (
+                    <div key={fIdx} style={{ padding: '12px 14px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <strong style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569', marginBottom: '4px' }}>
+                        {fld.label}
+                      </strong>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontStyle: 'italic' }}>
+                        {fld.placeholder}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 9. TEACHER TIPS */}
+          <section className="section">
+            <div className="container">
+              <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 36px' }}>
+                <span className="eyebrow">Classroom Best Practices</span>
+                <h2>Teacher Tips for Maximum Engagement</h2>
+                <p style={{ color: 'var(--muted)', fontSize: '15px', margin: 0 }}>
+                  Tested habits that keep learners actively speaking and writing.
+                </p>
+              </div>
+              <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                {(tg?.tips || []).map((tip, tIdx) => (
+                  <div key={tIdx} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e0edff', color: '#1665c0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', flexShrink: 0 }}>
+                      {tIdx + 1}
+                    </div>
+                    <p style={{ margin: 0, fontSize: '14.5px', color: '#2d3748', lineHeight: 1.55 }}>
+                      {tip}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 10. FINAL CALL TO ACTION */}
+          <section className="section alt">
+            <div className="container callout" style={{ textAlign: 'center', padding: '48px 24px' }}>
+              <span className="eyebrow">Community & Classroom</span>
+              <h2>Bring Local Voices Into Your Classroom</h2>
+              <p className="lead" style={{ maxWidth: '640px', margin: '0 auto 24px' }}>
+                Explore our collection of community stories and student podcasts to inspire your next lesson plan.
+              </p>
+              <div className="actions" style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <a className="btn primary" href="#stories">Explore Local Stories</a>
+                <a className="btn ghost" href="#learning">View Student Learning Activities</a>
+              </div>
+            </div>
+          </section>
+        </section>
+      )}
+
       {/* ================= 8. AUDIO & TRANSCRIPTS ================= */}
       {currentView === 'audio-transcripts' && (
         <section className="view" id="audio-transcripts" style={{ display: 'block' }}>
@@ -1205,6 +1574,150 @@ export const PublicWebsite = () => {
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)', lineHeight: 1.6 }}>
                 {activeVideoPodcast.description}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Guide Resource Detail Modal */}
+      {activeResourceModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setActiveResourceModal(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(15, 23, 42, 0.82)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px'
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              maxWidth: '720px',
+              width: '100%',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#fff',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+              padding: 0
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '18px 24px',
+                borderBottom: '1px solid var(--border, #e2e8f0)',
+                background: '#f8fafc'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span className="tag" style={{ margin: 0, fontSize: '11px' }}>{activeResourceModal.category}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>
+                    ⏱ {activeResourceModal.time} · Level: {activeResourceModal.level}
+                  </span>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--navy, #0f172a)' }}>
+                  {activeResourceModal.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveResourceModal(null)}
+                style={{
+                  border: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '22px',
+                  color: 'var(--navy, #0f172a)',
+                  lineHeight: 1,
+                  padding: '4px 8px'
+                }}
+                aria-label="Close guide"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '14.5px', lineHeight: 1.6, color: '#334155' }}>
+              <p style={{ margin: '0 0 20px', color: 'var(--muted)', fontStyle: 'italic' }}>
+                {activeResourceModal.excerpt}
+              </p>
+
+              {activeResourceModal.details?.objective && (
+                <div style={{ marginBottom: '20px', padding: '14px 16px', borderRadius: '10px', background: 'rgba(22, 101, 192, 0.07)', borderLeft: '4px solid #1665c0' }}>
+                  <strong style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px', letterSpacing: '0.04em' }}>
+                    🎯 Learning Objective
+                  </strong>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>
+                    {activeResourceModal.details.objective}
+                  </p>
+                </div>
+              )}
+
+              {activeResourceModal.details?.materials && activeResourceModal.details.materials.length > 0 && (
+                <div style={{ marginBottom: '22px' }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
+                    📦 Materials & Preparation
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--muted)' }}>
+                    {activeResourceModal.details.materials.map((mat, mi) => (
+                      <li key={mi} style={{ marginBottom: '4px' }}>{mat}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {activeResourceModal.details?.steps && activeResourceModal.details.steps.length > 0 && (
+                <div>
+                  <h4 style={{ margin: '0 0 10px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
+                    📋 Step-by-Step Procedure
+                  </h4>
+                  <ol style={{ margin: 0, paddingLeft: '20px', color: '#334155' }}>
+                    {activeResourceModal.details.steps.map((stp, si) => (
+                      <li key={si} style={{ marginBottom: '10px' }}>
+                        {stp}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                padding: '14px 24px',
+                borderTop: '1px solid var(--border, #e2e8f0)',
+                background: '#f8fafc'
+              }}
+            >
+              <button
+                type="button"
+                className="btn primary sm"
+                onClick={() => setActiveResourceModal(null)}
+              >
+                Close Guide
+              </button>
             </div>
           </div>
         </div>
