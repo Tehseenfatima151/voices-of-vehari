@@ -36,8 +36,36 @@ export const PublicWebsite = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Current view based on hash (#about, #podcasts, #/teacher-guide, etc.) or default to #index
-  const currentView = (location.hash ? location.hash.replace(/^#[/]?/, '') : 'index') || 'index';
+  // Valid views mapping
+  const validViews = [
+    'index',
+    'about',
+    'research',
+    'methodology',
+    'podcasts',
+    'stories',
+    'learning',
+    'teacher-guide',
+    'audio-transcripts',
+    'gallery',
+    'team',
+    'outcomes',
+    'news',
+    'contact'
+  ];
+
+  const rawHash = location.hash ? location.hash.replace(/^#[/]?/, '') : 'index';
+  const cleanHash = rawHash || 'index';
+
+  // Map sub-section anchors to their respective parent views
+  let currentView = cleanHash;
+  if (cleanHash === 'teacher-resources' || cleanHash === 'activity-of-the-month') {
+    currentView = 'teacher-guide';
+  } else if (cleanHash === 'transcript') {
+    currentView = 'audio-transcripts';
+  } else if (!validViews.includes(cleanHash)) {
+    currentView = 'index';
+  }
 
   const {
     settings = {},
@@ -98,6 +126,14 @@ export const PublicWebsite = () => {
       document.title = settings?.site_name ? `${settings.site_name} | Enhancing English Proficiency` : 'Voices of Vehari';
     }
   }, [currentView, settings]);
+
+  const scrollToTeacherSection = (e, elementId) => {
+    e.preventDefault();
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   const handleCopyPrompt = (promptText, index) => {
     if (navigator?.clipboard?.writeText) {
@@ -747,10 +783,34 @@ export const PublicWebsite = () => {
                 {tg?.hero?.description || 'Contextualized language teaching allows students to connect new English structures with familiar environments, reducing anxiety and dramatically improving communicative participation.'}
               </p>
               <div className="actions" style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                <a className="btn primary" href="#teacher-resources">
+                <a
+                  className="btn primary"
+                  href="#teacher-resources"
+                  onClick={(e) => scrollToTeacherSection(e, 'teacher-resources')}
+                  style={{
+                    background: '#1665c0',
+                    color: '#ffffff',
+                    border: '1px solid #1665c0',
+                    padding: '12px 24px',
+                    fontWeight: 700,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                  }}
+                >
                   {tg?.hero?.primary_cta || 'Explore Teaching Resources'}
                 </a>
-                <a className="btn ghost" href="#activity-of-the-month" style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}>
+                <a
+                  className="btn ghost"
+                  href="#activity-of-the-month"
+                  onClick={(e) => scrollToTeacherSection(e, 'activity-of-the-month')}
+                  style={{
+                    background: '#ffffff',
+                    color: '#073b7a',
+                    border: '1px solid #ffffff',
+                    padding: '12px 24px',
+                    fontWeight: 700,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+                  }}
+                >
                   {tg?.hero?.secondary_cta || 'Browse Classroom Ideas'}
                 </a>
               </div>
