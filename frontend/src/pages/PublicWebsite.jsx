@@ -39,6 +39,23 @@ export const PublicWebsite = () => {
   // Current view based on hash (#about, #podcasts, #/teacher-guide, etc.) or default to #index
   const currentView = (location.hash ? location.hash.replace(/^#[/]?/, '') : 'index') || 'index';
 
+  const {
+    settings = {},
+    hero = {},
+    cards = {},
+    statistics = [],
+    podcasts = [],
+    stories = [],
+    gallery = [],
+    team = [],
+    team_by_role = {},
+    timeline = [],
+    references = [],
+    teacherGuide = fallbackData.teacherGuide
+  } = data || {};
+
+  const tg = teacherGuide || fallbackData.teacherGuide;
+
   useEffect(() => {
     let isMounted = true;
     const fetchContent = async () => {
@@ -134,23 +151,6 @@ export const PublicWebsite = () => {
       setSubmittingContact(false);
     }
   };
-
-  const {
-    settings = {},
-    hero = {},
-    cards = {},
-    statistics = [],
-    podcasts = [],
-    stories = [],
-    gallery = [],
-    team = [],
-    team_by_role = {},
-    timeline = [],
-    references = [],
-    teacherGuide = fallbackData.teacherGuide
-  } = data || {};
-
-  const tg = teacherGuide || fallbackData.teacherGuide;
 
   // Filter teacher guide resources
   const filteredTeacherResources = (tg?.resources || []).filter((r) => {
