@@ -362,7 +362,7 @@ export const TeacherGuideManager = () => {
   const openEditPromptModal = (pr) => {
     setEditingPromptId(pr.id);
     setPromptFormData({
-      prompt: pr.prompt || '',
+      prompt: (pr.prompt || '').replace(/^["'\s]+|["'\s]+$/g, ''),
       category: pr.category || 'Local Community',
       display_order: pr.display_order ?? 0,
       is_published: pr.is_published ?? true,
@@ -386,12 +386,17 @@ export const TeacherGuideManager = () => {
       addToast('Prompt text is required', 'error');
       return;
     }
+    const cleanPrompt = promptFormData.prompt.trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    const payload = {
+      ...promptFormData,
+      prompt: cleanPrompt,
+    };
     try {
       if (editingPromptId) {
-        await api.updateTeacherPrompt(editingPromptId, promptFormData);
+        await api.updateTeacherPrompt(editingPromptId, payload);
         addToast('Prompt updated successfully', 'success');
       } else {
-        await api.createTeacherPrompt(promptFormData);
+        await api.createTeacherPrompt(payload);
         addToast('Prompt created successfully', 'success');
       }
       setPromptModalOpen(false);
@@ -837,7 +842,7 @@ export const TeacherGuideManager = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ color: '#1665c0', fontSize: '16px' }}>💬</span>
                           <span style={{ fontSize: '14px', fontStyle: 'italic', color: '#1e293b' }}>
-                            "{pr.prompt}"
+                            "{(pr.prompt || '').replace(/^["'\s]+|["'\s]+$/g, '')}"
                           </span>
                         </div>
                       </td>

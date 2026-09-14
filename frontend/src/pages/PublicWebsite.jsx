@@ -97,8 +97,19 @@ export const PublicWebsite = () => {
       }
     };
     fetchContent();
+
+    const handleStorage = () => {
+      if (isMounted) {
+        fetchContent();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleStorage);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleStorage);
     };
   }, []);
 
@@ -190,6 +201,7 @@ export const PublicWebsite = () => {
 
   // Filter teacher guide resources
   const filteredTeacherResources = (tg?.resources || []).filter((r) => {
+    if (r.is_published === false) return false;
     if (selectedTeacherCategory === 'All') return true;
     return (r.category || '').toLowerCase() === selectedTeacherCategory.toLowerCase();
   });
@@ -886,15 +898,15 @@ export const PublicWebsite = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="tag" style={{ margin: 0 }}>{res.category}</span>
                         <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>
-                          ⏱ {res.time}
+                          ⏱ {res.time || res.estimated_time || '30–45 minutes'}
                         </span>
                       </div>
                       <h3 style={{ fontSize: '1.2rem', margin: '0 0 10px', lineHeight: 1.35 }}>{res.title}</h3>
                       <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: 1.5, marginBottom: '14px' }}>
-                        {res.excerpt}
+                        {res.excerpt || res.short_description}
                       </p>
                       <div style={{ display: 'flex', gap: '10px', fontSize: '12px', color: 'var(--muted)', marginBottom: '18px' }}>
-                        <span><strong>Target Level:</strong> {res.level}</span>
+                        <span><strong>Target Level:</strong> {res.level || 'Intermediate'}</span>
                       </div>
                     </div>
                     <button
@@ -1013,34 +1025,38 @@ export const PublicWebsite = () => {
                 </p>
               </div>
               <div className="cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
-                {(tg?.classroomPrompts || []).map((prompt, pIdx) => (
-                  <div
-                    key={pIdx}
-                    className="card"
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      background: '#fafbfc',
-                      border: '1px solid var(--border)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-                      <span style={{ fontSize: '1.2rem', color: '#1665c0', flexShrink: 0 }}>💬</span>
-                      <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px', color: '#2d3748', lineHeight: 1.5, fontWeight: 500 }}>
-                        "{prompt}"
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn ghost sm"
-                      onClick={() => handleCopyPrompt(prompt, pIdx)}
-                      style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '6px 12px' }}
+                {(tg?.classroomPrompts || []).map((prompt, pIdx) => {
+                  const promptText = (typeof prompt === 'string' ? prompt : (prompt?.prompt || ''))
+                    .replace(/^["'\s]+|["'\s]+$/g, '');
+                  return (
+                    <div
+                      key={pIdx}
+                      className="card"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        background: '#fafbfc',
+                        border: '1px solid var(--border)'
+                      }}
                     >
-                      {copiedPromptIndex === pIdx ? '✓ Copied!' : '📋 Copy Prompt'}
-                    </button>
-                  </div>
-                ))}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+                        <span style={{ fontSize: '1.2rem', color: '#1665c0', flexShrink: 0 }}>💬</span>
+                        <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px', color: '#2d3748', lineHeight: 1.5, fontWeight: 500 }}>
+                          "{promptText}"
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() => handleCopyPrompt(promptText, pIdx)}
+                        style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '6px 12px' }}
+                      >
+                        {copiedPromptIndex === pIdx ? '✓ Copied!' : '📋 Copy Prompt'}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -1065,7 +1081,17 @@ export const PublicWebsite = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-                  {(tg?.lessonPlanTemplate?.fields || []).map((fld, fIdx) => (
+                  {((tg?.lessonPlanTemplate?.fields && tg.lessonPlanTemplate.fields.length > 0) ? tg.lessonPlanTemplate.fields : [
+                    { label: 'Topic', placeholder: tg?.lessonPlanTemplate?.topic || 'e.g. Local Harvests & Markets in Vehari' },
+                    { label: 'Learning Objective', placeholder: tg?.lessonPlanTemplate?.learning_objective || 'e.g. Describe a local market scene using 5 sensory adjectives.' },
+                    { label: 'English Skills', placeholder: tg?.lessonPlanTemplate?.english_skills || 'Speaking, Vocabulary, Listening, Reading' },
+                    { label: 'Vocabulary', placeholder: tg?.lessonPlanTemplate?.vocabulary || 'e.g. stall, vendor, barter, fresh, bustling, fragrant' },
+                    { label: 'Warm-up Activity', placeholder: tg?.lessonPlanTemplate?.warmup_activity || '5-minute photo prompt & partner brainstorming' },
+                    { label: 'Main Activity', placeholder: tg?.lessonPlanTemplate?.main_activity || 'Contextual reading or listening from Voices of Vehari story archive' },
+                    { label: 'Pair/Group Activity', placeholder: tg?.lessonPlanTemplate?.pair_group_activity || 'Role-play interview between local vendor and customer' },
+                    { label: 'Assessment', placeholder: tg?.lessonPlanTemplate?.assessment || 'Formative observation of peer interaction' },
+                    { label: 'Homework / Follow-up', placeholder: tg?.lessonPlanTemplate?.homework || 'Write a 4-sentence reflection on favorite family custom' },
+                  ]).map((fld, fIdx) => (
                     <div key={fIdx} style={{ padding: '12px 14px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                       <strong style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569', marginBottom: '4px' }}>
                         {fld.label}
@@ -1718,40 +1744,40 @@ export const PublicWebsite = () => {
             {/* Modal Body */}
             <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '14.5px', lineHeight: 1.6, color: '#334155' }}>
               <p style={{ margin: '0 0 20px', color: 'var(--muted)', fontStyle: 'italic' }}>
-                {activeResourceModal.excerpt}
+                {activeResourceModal.excerpt || activeResourceModal.short_description}
               </p>
 
-              {activeResourceModal.details?.objective && (
+              {(activeResourceModal.details?.objective || activeResourceModal.content) && (
                 <div style={{ marginBottom: '20px', padding: '14px 16px', borderRadius: '10px', background: 'rgba(22, 101, 192, 0.07)', borderLeft: '4px solid #1665c0' }}>
                   <strong style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px', letterSpacing: '0.04em' }}>
                     🎯 Learning Objective
                   </strong>
                   <p style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>
-                    {activeResourceModal.details.objective}
+                    {activeResourceModal.details?.objective || activeResourceModal.content}
                   </p>
                 </div>
               )}
 
-              {activeResourceModal.details?.materials && activeResourceModal.details.materials.length > 0 && (
+              {((activeResourceModal.details?.materials && activeResourceModal.details.materials.length > 0) || (activeResourceModal.materials && activeResourceModal.materials.length > 0)) && (
                 <div style={{ marginBottom: '22px' }}>
                   <h4 style={{ margin: '0 0 8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
                     📦 Materials & Preparation
                   </h4>
                   <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--muted)' }}>
-                    {activeResourceModal.details.materials.map((mat, mi) => (
+                    {(activeResourceModal.details?.materials || activeResourceModal.materials || []).map((mat, mi) => (
                       <li key={mi} style={{ marginBottom: '4px' }}>{mat}</li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              {activeResourceModal.details?.steps && activeResourceModal.details.steps.length > 0 && (
+              {((activeResourceModal.details?.steps && activeResourceModal.details.steps.length > 0) || (activeResourceModal.steps && activeResourceModal.steps.length > 0)) && (
                 <div>
                   <h4 style={{ margin: '0 0 10px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
                     📋 Step-by-Step Procedure
                   </h4>
                   <ol style={{ margin: 0, paddingLeft: '20px', color: '#334155' }}>
-                    {activeResourceModal.details.steps.map((stp, si) => (
+                    {(activeResourceModal.details?.steps || activeResourceModal.steps || []).map((stp, si) => (
                       <li key={si} style={{ marginBottom: '10px' }}>
                         {stp}
                       </li>

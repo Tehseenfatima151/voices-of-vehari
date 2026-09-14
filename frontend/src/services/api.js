@@ -28,6 +28,130 @@ const setStorageItem = (key, val) => {
   } catch (_) {}
 };
 
+// Teacher Guide offline/demo resilience helpers
+const getInitialArticles = () => (fallbackData.teacherGuide?.resources || []).map((a, i) => ({
+  ...a,
+  id: a.id || i + 1,
+  is_published: a.is_published ?? true,
+  display_order: a.display_order ?? (i + 1),
+  category: a.category || 'Lesson Ideas',
+  short_description: a.short_description || a.excerpt || '',
+  excerpt: a.short_description || a.excerpt || '',
+  estimated_time: a.estimated_time || a.time || '30–45 minutes',
+  time: a.estimated_time || a.time || '30–45 minutes',
+  level: a.level || 'Intermediate',
+  content: a.content || a.details?.objective || '',
+  materials: a.materials || a.details?.materials || [],
+  steps: a.steps || a.details?.steps || [],
+  details: {
+    objective: a.content || a.details?.objective || a.short_description || '',
+    materials: a.materials || a.details?.materials || [],
+    steps: a.steps || a.details?.steps || [],
+  }
+}));
+
+const getInitialActivities = () => [
+  {
+    ...fallbackData.teacherGuide?.featuredActivity,
+    id: 1,
+    is_published: true,
+    estimated_time: fallbackData.teacherGuide?.featuredActivity?.time || '35 minutes',
+    teacher_tip: fallbackData.teacherGuide?.featuredActivity?.teacherTip || '',
+  }
+];
+
+const getInitialStrategies = () => (fallbackData.teacherGuide?.strategies || []).map((s, i) => ({
+  ...s,
+  id: s.id || i + 1,
+  strategy_number: s.strategy_number || s.num || String(i + 1).padStart(2, '0'),
+  num: s.strategy_number || s.num || String(i + 1).padStart(2, '0'),
+  display_order: s.display_order ?? (i + 1),
+  is_published: s.is_published ?? true,
+}));
+
+const getInitialPrompts = () => (fallbackData.teacherGuide?.classroomPrompts || []).map((p, i) => ({
+  id: i + 1,
+  prompt: (typeof p === 'string' ? p : (p.prompt || '')).replace(/^["'\s]+|["'\s]+$/g, ''),
+  category: 'Classroom',
+  display_order: i + 1,
+  is_published: true
+}));
+
+const getInitialLessonPlan = () => ({
+  ...fallbackData.teacherGuide?.lessonPlanTemplate,
+  topic: fallbackData.teacherGuide?.lessonPlanTemplate?.topic || 'Local Harvests & Markets in Vehari',
+  learning_objective: fallbackData.teacherGuide?.lessonPlanTemplate?.learning_objective || 'Describe a local market scene using 5 sensory adjectives.',
+  english_skills: fallbackData.teacherGuide?.lessonPlanTemplate?.english_skills || 'Speaking, Vocabulary, Listening, Reading',
+  vocabulary: fallbackData.teacherGuide?.lessonPlanTemplate?.vocabulary || 'stall, vendor, barter, fresh, bustling, fragrant',
+  warmup_activity: fallbackData.teacherGuide?.lessonPlanTemplate?.warmup_activity || '5-minute photo prompt & partner brainstorming',
+  main_activity: fallbackData.teacherGuide?.lessonPlanTemplate?.main_activity || 'Contextual reading or listening from story archive',
+  pair_group_activity: fallbackData.teacherGuide?.lessonPlanTemplate?.pair_group_activity || 'Role-play interview between local vendor and customer',
+  assessment: fallbackData.teacherGuide?.lessonPlanTemplate?.assessment || 'Formative observation of peer interaction',
+  homework: fallbackData.teacherGuide?.lessonPlanTemplate?.homework || 'Write a 4-sentence reflection on favorite family custom',
+});
+
+const buildTeacherGuidePayload = () => {
+  const rawArticles = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+  const tgArticles = rawArticles
+    .filter((a) => a.is_published !== false)
+    .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
+
+  const rawActivities = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+  const publishedActivities = rawActivities.filter((a) => a.is_published !== false);
+  const tgFeaturedActivity = publishedActivities.length > 0
+    ? publishedActivities[0]
+    : (fallbackData.teacherGuide?.featuredActivity || null);
+
+  const rawStrategies = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+  const tgStrategies = rawStrategies
+    .filter((s) => s.is_published !== false)
+    .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
+
+  const rawPrompts = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+  const tgPrompts = rawPrompts
+    .filter((p) => p.is_published !== false)
+    .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
+
+  const rawLessonPlan = getStorageItem('vov_cms_tg_lessonplan', getInitialLessonPlan());
+  const lpFields = [
+    { label: 'Topic', placeholder: rawLessonPlan.topic || 'e.g. Local Harvests & Markets in Vehari' },
+    { label: 'Learning Objective', placeholder: rawLessonPlan.learning_objective || 'e.g. By the end of class, students will be able to describe a market scene...' },
+    { label: 'English Skills', placeholder: rawLessonPlan.english_skills || 'Speaking, Vocabulary, Listening, Reading' },
+    { label: 'Vocabulary', placeholder: rawLessonPlan.vocabulary || 'e.g. stall, vendor, barter, fresh, bustling, fragrant' },
+    { label: 'Warm-up Activity', placeholder: rawLessonPlan.warmup_activity || '5-minute photo prompt & partner brainstorming' },
+    { label: 'Main Activity', placeholder: rawLessonPlan.main_activity || 'Contextual reading or listening from Voices of Vehari story archive' },
+    { label: 'Pair/Group Activity', placeholder: rawLessonPlan.pair_group_activity || 'Role-play interview between local vendor and customer' },
+    { label: 'Assessment', placeholder: rawLessonPlan.assessment || 'Formative observation of peer interaction' },
+    { label: 'Homework / Follow-up', placeholder: rawLessonPlan.homework || 'Write a 4-sentence reflection on their favorite family custom' },
+  ];
+  const tgLessonPlan = {
+    ...rawLessonPlan,
+    fields: rawLessonPlan.fields && rawLessonPlan.fields.length > 0 ? rawLessonPlan.fields : lpFields,
+  };
+
+  const uniqueCategories = ['All', ...new Set(tgArticles.map((a) => a.category).filter(Boolean))];
+
+  return {
+    ...(fallbackData.teacherGuide || {}),
+    categories: uniqueCategories,
+    resources: tgArticles,
+    featuredActivity: tgFeaturedActivity,
+    strategies: tgStrategies,
+    classroomPrompts: tgPrompts.map((p) => {
+      const txt = typeof p === 'string' ? p : (p.prompt || '');
+      return txt.replace(/^["'\s]+|["'\s]+$/g, '');
+    }),
+    promptsList: tgPrompts,
+    lessonPlanTemplate: tgLessonPlan,
+  };
+};
+
+const notifyStorageUpdate = () => {
+  try {
+    window.dispatchEvent(new Event('storage'));
+  } catch (_) {}
+};
+
 // Request interceptor: attach JWT token if available
 apiClient.interceptors.request.use(
   (config) => {
@@ -89,7 +213,20 @@ export const api = {
       stories: getStorageItem('vov_cms_stories', fallbackData.stories),
       gallery: getStorageItem('vov_cms_gallery', fallbackData.gallery),
       team: getStorageItem('vov_cms_team', fallbackData.team),
+      teacherGuide: buildTeacherGuidePayload(),
     };
+  },
+
+  getPublicTeacherGuide: async (params) => {
+    try {
+      const res = await apiClient.get('/api/public/teacher-guide', { params, timeout: 3500 });
+      if (res.data && res.data.data) {
+        return res.data.data;
+      }
+    } catch {
+      // Fallback below
+    }
+    return buildTeacherGuidePayload();
   },
 
   getPublicPodcasts: async (params) => {
@@ -710,80 +847,97 @@ export const api = {
   getAdminTeacherArticles: async () => {
     try {
       const res = await apiClient.get('/api/admin/teacher-guide/articles');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_tg_articles', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_tg_articles', getInitialArticles());
   },
 
   createTeacherArticle: async (data) => {
+    const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+    const newArt = {
+      ...data,
+      id: Date.now(),
+      is_published: true,
+      display_order: Number(data.display_order) || (list.length + 1),
+      short_description: data.short_description || '',
+      excerpt: data.short_description || '',
+      time: data.estimated_time || '30–45 minutes',
+      details: {
+        objective: data.content || data.short_description,
+        materials: Array.isArray(data.materials) ? data.materials : [],
+        steps: Array.isArray(data.steps) ? data.steps : []
+      }
+    };
     try {
       const res = await apiClient.post('/api/admin/teacher-guide/articles', data);
+      const serverArt = res.data?.data || newArt;
+      setStorageItem('vov_cms_tg_articles', [serverArt, ...list]);
+      notifyStorageUpdate();
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
-      const newArt = {
-        ...data,
-        id: Date.now(),
-        is_published: true,
-        details: {
-          objective: data.content || data.short_description,
-          materials: data.materials || [],
-          steps: data.steps || []
-        }
-      };
       const updated = [newArt, ...list];
       setStorageItem('vov_cms_tg_articles', updated);
+      notifyStorageUpdate();
       return { success: true, message: 'Article created successfully', data: newArt };
     }
   },
 
   updateTeacherArticle: async (id, data) => {
+    const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+    const updated = list.map((a) => {
+      if (a.id === id || a.id === Number(id)) {
+        return {
+          ...a,
+          ...data,
+          short_description: data.short_description !== undefined ? data.short_description : a.short_description,
+          excerpt: data.short_description !== undefined ? data.short_description : a.excerpt,
+          time: data.estimated_time !== undefined ? data.estimated_time : (a.time || a.estimated_time),
+          details: {
+            objective: data.content !== undefined ? data.content : a.details?.objective,
+            materials: data.materials !== undefined ? data.materials : a.details?.materials,
+            steps: data.steps !== undefined ? data.steps : a.details?.steps,
+          }
+        };
+      }
+      return a;
+    });
+    setStorageItem('vov_cms_tg_articles', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/teacher-guide/articles/${id}`, data);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
-      const updated = list.map((a) => {
-        if (a.id === id || a.id === Number(id)) {
-          return {
-            ...a,
-            ...data,
-            details: {
-              ...a.details,
-              objective: data.content !== undefined ? data.content : a.details?.objective,
-              materials: data.materials !== undefined ? data.materials : a.details?.materials,
-              steps: data.steps !== undefined ? data.steps : a.details?.steps,
-            }
-          };
-        }
-        return a;
-      });
-      setStorageItem('vov_cms_tg_articles', updated);
       return { success: true, message: 'Article updated successfully' };
     }
   },
 
   deleteTeacherArticle: async (id) => {
+    const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+    const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
+    setStorageItem('vov_cms_tg_articles', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/teacher-guide/articles/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
-      const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
-      setStorageItem('vov_cms_tg_articles', updated);
       return { success: true, message: 'Article deleted successfully' };
     }
   },
 
   toggleTeacherArticlePublish: async (id) => {
+    const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+    setStorageItem('vov_cms_tg_articles', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/teacher-guide/articles/${id}/toggle-publish`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_articles', fallbackData.teacherGuide.resources);
-      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
-      setStorageItem('vov_cms_tg_articles', updated);
       return { success: true, message: 'Status toggled successfully' };
     }
   },
@@ -792,58 +946,83 @@ export const api = {
   getAdminTeacherActivities: async () => {
     try {
       const res = await apiClient.get('/api/admin/teacher-guide/activities');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_tg_activities', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      const defAct = { ...fallbackData.teacherGuide.featuredActivity, id: 1, is_published: true };
-      return getStorageItem('vov_cms_tg_activities', [defAct]);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_tg_activities', getInitialActivities());
   },
 
   createTeacherActivity: async (data) => {
+    const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+    const newAct = {
+      ...data,
+      id: Date.now(),
+      is_published: true,
+      time: data.estimated_time || '35 minutes',
+      teacherTip: data.teacher_tip || '',
+      objectives: Array.isArray(data.objectives) ? data.objectives : [],
+      steps: Array.isArray(data.steps) ? data.steps : []
+    };
     try {
       const res = await apiClient.post('/api/admin/teacher-guide/activities', data);
+      const serverAct = res.data?.data || newAct;
+      setStorageItem('vov_cms_tg_activities', [serverAct, ...list]);
+      notifyStorageUpdate();
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_activities', []);
-      const newAct = { ...data, id: Date.now(), is_published: true };
       const updated = [newAct, ...list];
       setStorageItem('vov_cms_tg_activities', updated);
+      notifyStorageUpdate();
       return { success: true, message: 'Activity created successfully', data: newAct };
     }
   },
 
   updateTeacherActivity: async (id, data) => {
+    const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? {
+      ...a,
+      ...data,
+      time: data.estimated_time !== undefined ? data.estimated_time : (a.time || a.estimated_time),
+      teacherTip: data.teacher_tip !== undefined ? data.teacher_tip : (a.teacherTip || a.teacher_tip),
+      objectives: data.objectives !== undefined ? data.objectives : a.objectives,
+      steps: data.steps !== undefined ? data.steps : a.steps
+    } : a));
+    setStorageItem('vov_cms_tg_activities', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/teacher-guide/activities/${id}`, data);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_activities', []);
-      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, ...data } : a));
-      setStorageItem('vov_cms_tg_activities', updated);
       return { success: true, message: 'Activity updated successfully' };
     }
   },
 
   deleteTeacherActivity: async (id) => {
+    const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+    const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
+    setStorageItem('vov_cms_tg_activities', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/teacher-guide/activities/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_activities', []);
-      const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
-      setStorageItem('vov_cms_tg_activities', updated);
       return { success: true, message: 'Activity deleted successfully' };
     }
   },
 
   toggleTeacherActivityPublish: async (id) => {
+    const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+    setStorageItem('vov_cms_tg_activities', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/teacher-guide/activities/${id}/toggle-publish`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_activities', []);
-      const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
-      setStorageItem('vov_cms_tg_activities', updated);
       return { success: true, message: 'Status toggled successfully' };
     }
   },
@@ -852,57 +1031,78 @@ export const api = {
   getAdminTeacherStrategies: async () => {
     try {
       const res = await apiClient.get('/api/admin/teacher-guide/strategies');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_tg_strategies', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
   },
 
   createTeacherStrategy: async (data) => {
+    const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+    const newStrat = {
+      ...data,
+      id: Date.now(),
+      num: data.strategy_number || String(list.length + 1).padStart(2, '0'),
+      display_order: Number(data.display_order) || (list.length + 1),
+      is_published: true
+    };
     try {
       const res = await apiClient.post('/api/admin/teacher-guide/strategies', data);
+      const serverStrat = res.data?.data || newStrat;
+      setStorageItem('vov_cms_tg_strategies', [...list, serverStrat]);
+      notifyStorageUpdate();
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
-      const newStrat = { ...data, id: Date.now(), is_published: true };
       const updated = [...list, newStrat];
       setStorageItem('vov_cms_tg_strategies', updated);
+      notifyStorageUpdate();
       return { success: true, message: 'Strategy created successfully', data: newStrat };
     }
   },
 
   updateTeacherStrategy: async (id, data) => {
+    const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? {
+      ...s,
+      ...data,
+      num: data.strategy_number !== undefined ? data.strategy_number : (s.num || s.strategy_number)
+    } : s));
+    setStorageItem('vov_cms_tg_strategies', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/teacher-guide/strategies/${id}`, data);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
-      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
-      setStorageItem('vov_cms_tg_strategies', updated);
       return { success: true, message: 'Strategy updated successfully' };
     }
   },
 
   deleteTeacherStrategy: async (id) => {
+    const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+    const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
+    setStorageItem('vov_cms_tg_strategies', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/teacher-guide/strategies/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
-      const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
-      setStorageItem('vov_cms_tg_strategies', updated);
       return { success: true, message: 'Strategy deleted successfully' };
     }
   },
 
   toggleTeacherStrategyPublish: async (id) => {
+    const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
+    setStorageItem('vov_cms_tg_strategies', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/teacher-guide/strategies/${id}/toggle-publish`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_strategies', fallbackData.teacherGuide.strategies);
-      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
-      setStorageItem('vov_cms_tg_strategies', updated);
       return { success: true, message: 'Status toggled successfully' };
     }
   },
@@ -911,64 +1111,88 @@ export const api = {
   getAdminTeacherPrompts: async () => {
     try {
       const res = await apiClient.get('/api/admin/teacher-guide/prompts');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_tg_prompts', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      const initial = (fallbackData.teacherGuide.classroomPrompts || []).map((p, i) => ({
-        id: i + 1,
-        prompt: p,
-        category: 'Classroom',
-        display_order: i + 1,
-        is_published: true
-      }));
-      return getStorageItem('vov_cms_tg_prompts', initial);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
   },
 
   createTeacherPrompt: async (data) => {
+    const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+    const cleanText = (data.prompt || '').trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    const newPrompt = {
+      ...data,
+      prompt: cleanText,
+      id: Date.now(),
+      display_order: Number(data.display_order) || (list.length + 1),
+      is_published: true
+    };
     try {
-      const res = await apiClient.post('/api/admin/teacher-guide/prompts', data);
+      const res = await apiClient.post('/api/admin/teacher-guide/prompts', { ...data, prompt: cleanText });
+      const serverPrompt = res.data?.data || newPrompt;
+      setStorageItem('vov_cms_tg_prompts', [...list, serverPrompt]);
+      notifyStorageUpdate();
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_prompts', []);
-      const newPrompt = { ...data, id: Date.now(), is_published: true };
       const updated = [...list, newPrompt];
       setStorageItem('vov_cms_tg_prompts', updated);
+      notifyStorageUpdate();
       return { success: true, message: 'Prompt created successfully', data: newPrompt };
     }
   },
 
   updateTeacherPrompt: async (id, data) => {
+    const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+    const cleanText = data.prompt !== undefined ? data.prompt.trim().replace(/^["'\s]+|["'\s]+$/g, '') : undefined;
+    const updated = list.map((p) => {
+      if (p.id === id || p.id === Number(id)) {
+        return {
+          ...p,
+          ...data,
+          prompt: cleanText !== undefined ? cleanText : p.prompt,
+        };
+      }
+      return p;
+    });
+    setStorageItem('vov_cms_tg_prompts', updated);
+    notifyStorageUpdate();
     try {
-      const res = await apiClient.put(`/api/admin/teacher-guide/prompts/${id}`, data);
+      const res = await apiClient.put(`/api/admin/teacher-guide/prompts/${id}`, {
+        ...data,
+        prompt: cleanText !== undefined ? cleanText : data.prompt
+      });
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_prompts', []);
-      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
-      setStorageItem('vov_cms_tg_prompts', updated);
       return { success: true, message: 'Prompt updated successfully' };
     }
   },
 
   deleteTeacherPrompt: async (id) => {
+    const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+    const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
+    setStorageItem('vov_cms_tg_prompts', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/teacher-guide/prompts/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_prompts', []);
-      const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
-      setStorageItem('vov_cms_tg_prompts', updated);
       return { success: true, message: 'Prompt deleted successfully' };
     }
   },
 
   toggleTeacherPromptPublish: async (id) => {
+    const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
+    setStorageItem('vov_cms_tg_prompts', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/teacher-guide/prompts/${id}/toggle-publish`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_tg_prompts', []);
-      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
-      setStorageItem('vov_cms_tg_prompts', updated);
       return { success: true, message: 'Status toggled successfully' };
     }
   },
@@ -977,19 +1201,36 @@ export const api = {
   getAdminLessonPlan: async () => {
     try {
       const res = await apiClient.get('/api/admin/teacher-guide/lesson-plan');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_tg_lessonplan', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_tg_lessonplan', fallbackData.teacherGuide.lessonPlanTemplate);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_tg_lessonplan', getInitialLessonPlan());
   },
 
   updateLessonPlan: async (data) => {
+    const lpFields = [
+      { label: 'Topic', placeholder: data.topic || 'e.g. Local Harvests & Markets in Vehari' },
+      { label: 'Learning Objective', placeholder: data.learning_objective || 'e.g. By the end of class, students will be able to describe a market scene...' },
+      { label: 'English Skills', placeholder: data.english_skills || 'Speaking, Vocabulary, Listening, Reading' },
+      { label: 'Vocabulary', placeholder: data.vocabulary || 'e.g. stall, vendor, barter, fresh, bustling, fragrant' },
+      { label: 'Warm-up Activity', placeholder: data.warmup_activity || '5-minute photo prompt & partner brainstorming' },
+      { label: 'Main Activity', placeholder: data.main_activity || 'Contextual reading or listening from Voices of Vehari story archive' },
+      { label: 'Pair/Group Activity', placeholder: data.pair_group_activity || 'Role-play interview between local vendor and customer' },
+      { label: 'Assessment', placeholder: data.assessment || 'Formative observation of peer interaction' },
+      { label: 'Homework / Follow-up', placeholder: data.homework || 'Write a 4-sentence reflection on their favorite family custom' },
+    ];
+    const fullPlan = { ...data, fields: lpFields };
+    setStorageItem('vov_cms_tg_lessonplan', fullPlan);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put('/api/admin/teacher-guide/lesson-plan', data);
       return res.data;
     } catch {
-      setStorageItem('vov_cms_tg_lessonplan', data);
-      return { success: true, message: 'Lesson plan template updated successfully', data };
+      return { success: true, message: 'Lesson plan template updated successfully', data: fullPlan };
     }
   },
 };

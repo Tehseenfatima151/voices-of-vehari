@@ -69,11 +69,11 @@ def get_all_public_content():
             { 'icon': '✍️', 'title': 'Writing Activities', 'description': 'Help students transform personal and local experiences into short English texts.' },
             { 'icon': '💡', 'title': 'Critical Thinking', 'description': 'Encourage students to compare, discuss and reflect on cultural experiences.' },
         ],
-        'categories': ['All', 'Lesson Ideas', 'Speaking', 'Writing', 'Reading', 'Vocabulary', 'Student Engagement'],
+        'categories': ['All'] + [c for c in sorted(list(set(art.category for art in tg_articles if art.category))) if c != 'All'] if tg_articles else ['All', 'Lesson Ideas', 'Speaking', 'Writing', 'Reading', 'Vocabulary', 'Student Engagement'],
         'resources': [art.to_dict() for art in tg_articles],
         'featuredActivity': tg_activity.to_dict() if tg_activity else None,
         'strategies': [s.to_dict() for s in tg_strategies],
-        'classroomPrompts': [p.prompt for p in tg_prompts],
+        'classroomPrompts': [p.prompt.strip('"\' \t\r\n') for p in tg_prompts],
         'promptsList': [p.to_dict() for p in tg_prompts],
         'lessonPlanTemplate': tg_lesson_plan.to_dict() if tg_lesson_plan else None,
         'tips': [
@@ -131,7 +131,7 @@ def get_teacher_guide_public():
             'resources': [a.to_dict() for a in articles],
             'featuredActivity': activity.to_dict() if activity else None,
             'strategies': [s.to_dict() for s in strategies],
-            'classroomPrompts': [p.prompt for p in prompts],
+            'classroomPrompts': [p.prompt.strip('"\' \t\r\n') for p in prompts],
             'lessonPlanTemplate': lesson_plan.to_dict() if lesson_plan else None
         }
     }), 200
