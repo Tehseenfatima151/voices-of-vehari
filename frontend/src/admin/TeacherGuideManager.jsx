@@ -520,15 +520,17 @@ export const TeacherGuideManager = () => {
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 type="text"
+                className="form-control"
                 placeholder="Search articles..."
                 value={articleSearch}
                 onChange={(e) => setArticleSearch(e.target.value)}
-                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', width: '220px' }}
+                style={{ width: '220px', padding: '8px 12px' }}
               />
               <select
+                className="form-control"
                 value={selectedArticleCategory}
                 onChange={(e) => setSelectedArticleCategory(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                style={{ width: 'auto', padding: '8px 12px' }}
               >
                 {categories.map((c) => (
                   <option key={c} value={c}>
@@ -886,11 +888,12 @@ export const TeacherGuideManager = () => {
           </div>
 
           <form onSubmit={handleSaveLessonPlan}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
               <div className="form-group">
-                <label>Template Title</label>
+                <label className="form-label">Template Title</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.title}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, title: e.target.value })}
                   placeholder="e.g. Simple Lesson Plan Template"
@@ -899,9 +902,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Template Subtitle / Description</label>
+                <label className="form-label">Template Subtitle / Description</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.description}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, description: e.target.value })}
                   placeholder="e.g. A practical, culturally-responsive lesson structure"
@@ -909,9 +913,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Default Topic</label>
+                <label className="form-label">Default Topic</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.topic}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, topic: e.target.value })}
                   placeholder="e.g. Local Harvests & Markets in Vehari"
@@ -919,9 +924,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Target English Skills</label>
+                <label className="form-label">Target English Skills</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.english_skills}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, english_skills: e.target.value })}
                   placeholder="e.g. Speaking, Vocabulary, Listening, Reading"
@@ -929,9 +935,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Learning Objective</label>
+                <label className="form-label">Learning Objective</label>
                 <textarea
-                  rows="2"
+                  rows="3"
+                  className="form-control"
                   value={lessonPlan.learning_objective}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, learning_objective: e.target.value })}
                   placeholder="e.g. By the end of class, students will be able to describe..."
@@ -939,9 +946,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Key Vocabulary</label>
+                <label className="form-label">Key Vocabulary</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.vocabulary}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, vocabulary: e.target.value })}
                   placeholder="e.g. stall, vendor, barter, fresh, bustling, fragrant"
@@ -949,9 +957,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Warm-up Activity</label>
+                <label className="form-label">Warm-up Activity</label>
                 <textarea
-                  rows="2"
+                  rows="3"
+                  className="form-control"
                   value={lessonPlan.warmup_activity}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, warmup_activity: e.target.value })}
                   placeholder="5-minute photo prompt & partner brainstorming"
@@ -959,9 +968,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Main Activity</label>
+                <label className="form-label">Main Activity</label>
                 <textarea
-                  rows="2"
+                  rows="3"
+                  className="form-control"
                   value={lessonPlan.main_activity}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, main_activity: e.target.value })}
                   placeholder="Contextual reading or listening from Voices of Vehari archive"
@@ -969,9 +979,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Pair / Group Activity</label>
+                <label className="form-label">Pair / Group Activity</label>
                 <textarea
-                  rows="2"
+                  rows="3"
+                  className="form-control"
                   value={lessonPlan.pair_group_activity}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, pair_group_activity: e.target.value })}
                   placeholder="Role-play interview between vendor and customer"
@@ -979,9 +990,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group">
-                <label>Formative Assessment</label>
+                <label className="form-label">Formative Assessment</label>
                 <textarea
-                  rows="2"
+                  rows="3"
+                  className="form-control"
                   value={lessonPlan.assessment}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, assessment: e.target.value })}
                   placeholder="Formative observation of peer interaction"
@@ -989,9 +1001,10 @@ export const TeacherGuideManager = () => {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Homework / Follow-up</label>
+                <label className="form-label">Homework / Follow-up</label>
                 <input
                   type="text"
+                  className="form-control"
                   value={lessonPlan.homework}
                   onChange={(e) => setLessonPlan({ ...lessonPlan, homework: e.target.value })}
                   placeholder="Write a 4-sentence reflection on favorite family custom"
@@ -1024,9 +1037,10 @@ export const TeacherGuideManager = () => {
             <form onSubmit={handleArticleSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Title *</label>
+                  <label className="form-label">Title *</label>
                   <input
                     type="text"
+                    className="form-control"
                     value={articleFormData.title}
                     onChange={(e) => setArticleFormData({ ...articleFormData, title: e.target.value })}
                     placeholder="e.g. Teaching English Through Local Stories"
@@ -1036,8 +1050,9 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div className="form-group">
-                    <label>Category</label>
+                    <label className="form-label">Category</label>
                     <select
+                      className="form-control"
                       value={articleFormData.category}
                       onChange={(e) => setArticleFormData({ ...articleFormData, category: e.target.value })}
                     >
@@ -1051,8 +1066,9 @@ export const TeacherGuideManager = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Target Level</label>
+                    <label className="form-label">Target Level</label>
                     <select
+                      className="form-control"
                       value={articleFormData.level}
                       onChange={(e) => setArticleFormData({ ...articleFormData, level: e.target.value })}
                     >
@@ -1066,9 +1082,10 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div className="form-group">
-                    <label>Estimated Time</label>
+                    <label className="form-label">Estimated Time</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={articleFormData.estimated_time}
                       onChange={(e) => setArticleFormData({ ...articleFormData, estimated_time: e.target.value })}
                       placeholder="e.g. 30–45 minutes"
@@ -1076,9 +1093,10 @@ export const TeacherGuideManager = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Author</label>
+                    <label className="form-label">Author</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={articleFormData.author}
                       onChange={(e) => setArticleFormData({ ...articleFormData, author: e.target.value })}
                       placeholder="Voices of Vehari Team"
@@ -1087,9 +1105,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Short Description / Excerpt *</label>
+                  <label className="form-label">Short Description / Excerpt *</label>
                   <textarea
                     rows="2"
+                    className="form-control"
                     value={articleFormData.short_description}
                     onChange={(e) => setArticleFormData({ ...articleFormData, short_description: e.target.value })}
                     placeholder="Brief description shown on the resource card"
@@ -1098,9 +1117,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Pedagogical Objective / Detailed Content</label>
+                  <label className="form-label">Pedagogical Objective / Detailed Content</label>
                   <textarea
                     rows="3"
+                    className="form-control"
                     value={articleFormData.content}
                     onChange={(e) => setArticleFormData({ ...articleFormData, content: e.target.value })}
                     placeholder="Clear statement of what students will achieve"
@@ -1108,9 +1128,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Recommended Materials (one per line)</label>
+                  <label className="form-label">Recommended Materials (one per line)</label>
                   <textarea
                     rows="3"
+                    className="form-control"
                     value={articleFormData.materials}
                     onChange={(e) => setArticleFormData({ ...articleFormData, materials: e.target.value })}
                     placeholder={"Printed story or audio clip\nGuided reading worksheet\nDiscussion cue cards"}
@@ -1118,9 +1139,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Step-by-Step Procedure (one per line)</label>
+                  <label className="form-label">Step-by-Step Procedure (one per line)</label>
                   <textarea
                     rows="5"
+                    className="form-control"
                     value={articleFormData.steps}
                     onChange={(e) => setArticleFormData({ ...articleFormData, steps: e.target.value })}
                     placeholder={"Warm-up (5 mins): Brief introduction\nVocabulary Preview (8 mins): Pre-teach terms\nActive Reading (12 mins): Paired task\nGroup Discussion (10 mins): Reflection"}
@@ -1129,22 +1151,24 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', alignItems: 'center' }}>
                   <div className="form-group">
-                    <label>Display Order</label>
+                    <label className="form-label">Display Order</label>
                     <input
                       type="number"
+                      className="form-control"
                       value={articleFormData.display_order}
                       onChange={(e) => setArticleFormData({ ...articleFormData, display_order: parseInt(e.target.value) || 0 })}
                     />
                   </div>
 
-                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
                     <input
                       type="checkbox"
                       id="art_pub"
                       checked={articleFormData.is_published}
                       onChange={(e) => setArticleFormData({ ...articleFormData, is_published: e.target.checked })}
+                      style={{ width: 'auto', cursor: 'pointer' }}
                     />
-                    <label htmlFor="art_pub" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+                    <label htmlFor="art_pub" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
                       Publish Immediately
                     </label>
                   </div>
@@ -1180,9 +1204,10 @@ export const TeacherGuideManager = () => {
             <form onSubmit={handleActivitySubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Activity Title *</label>
+                  <label className="form-label">Activity Title *</label>
                   <input
                     type="text"
+                    className="form-control"
                     value={activityFormData.title}
                     onChange={(e) => setActivityFormData({ ...activityFormData, title: e.target.value })}
                     placeholder="e.g. Tell Your Story"
@@ -1191,9 +1216,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Purpose / Pedagogical Aim *</label>
+                  <label className="form-label">Purpose / Pedagogical Aim *</label>
                   <textarea
                     rows="2"
+                    className="form-control"
                     value={activityFormData.purpose}
                     onChange={(e) => setActivityFormData({ ...activityFormData, purpose: e.target.value })}
                     placeholder="e.g. Help students practice speaking and narrative skills..."
@@ -1203,9 +1229,10 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div className="form-group">
-                    <label>Duration</label>
+                    <label className="form-label">Duration</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={activityFormData.estimated_time}
                       onChange={(e) => setActivityFormData({ ...activityFormData, estimated_time: e.target.value })}
                       placeholder="e.g. 35 minutes"
@@ -1213,8 +1240,9 @@ export const TeacherGuideManager = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Target Level</label>
+                    <label className="form-label">Target Level</label>
                     <select
+                      className="form-control"
                       value={activityFormData.level}
                       onChange={(e) => setActivityFormData({ ...activityFormData, level: e.target.value })}
                     >
@@ -1227,9 +1255,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>💡 Teacher Tip</label>
+                  <label className="form-label">💡 Teacher Tip</label>
                   <input
                     type="text"
+                    className="form-control"
                     value={activityFormData.teacher_tip}
                     onChange={(e) => setActivityFormData({ ...activityFormData, teacher_tip: e.target.value })}
                     placeholder="e.g. Encourage students to choose experiences from their own community..."
@@ -1237,9 +1266,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Learning Objectives (one per line)</label>
+                  <label className="form-label">Learning Objectives (one per line)</label>
                   <textarea
                     rows="4"
+                    className="form-control"
                     value={activityFormData.objectives}
                     onChange={(e) => setActivityFormData({ ...activityFormData, objectives: e.target.value })}
                     placeholder={"Practice past tense\nImprove speaking confidence\nBuild descriptive vocabulary\nDevelop listening skills"}
@@ -1247,23 +1277,25 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Step-by-Step Procedure (one per line)</label>
+                  <label className="form-label">Step-by-Step Procedure (one per line)</label>
                   <textarea
                     rows="5"
+                    className="form-control"
                     value={activityFormData.steps}
                     onChange={(e) => setActivityFormData({ ...activityFormData, steps: e.target.value })}
                     placeholder={"Choose a familiar personal experience\nWrite 5–7 keywords in English\nPrepare 1–2 minute story\nShare with a partner"}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
                     id="act_pub"
                     checked={activityFormData.is_published}
                     onChange={(e) => setActivityFormData({ ...activityFormData, is_published: e.target.checked })}
+                    style={{ width: 'auto', cursor: 'pointer' }}
                   />
-                  <label htmlFor="act_pub" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+                  <label htmlFor="act_pub" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
                     Feature this activity publicly
                   </label>
                 </div>
@@ -1299,9 +1331,10 @@ export const TeacherGuideManager = () => {
               <div className="modal-body">
                 <div style={{ display: 'grid', gridTemplateColumns: '100px 80px 1fr', gap: '12px' }}>
                   <div className="form-group">
-                    <label>Number</label>
+                    <label className="form-label">Number</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={strategyFormData.strategy_number}
                       onChange={(e) => setStrategyFormData({ ...strategyFormData, strategy_number: e.target.value })}
                       placeholder="01"
@@ -1309,18 +1342,20 @@ export const TeacherGuideManager = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label>Icon</label>
+                    <label className="form-label">Icon</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={strategyFormData.icon}
                       onChange={(e) => setStrategyFormData({ ...strategyFormData, icon: e.target.value })}
                       placeholder="💡"
                     />
                   </div>
                   <div className="form-group">
-                    <label>Title *</label>
+                    <label className="form-label">Title *</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={strategyFormData.title}
                       onChange={(e) => setStrategyFormData({ ...strategyFormData, title: e.target.value })}
                       placeholder="Start with Familiar Topics"
@@ -1330,9 +1365,10 @@ export const TeacherGuideManager = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Description *</label>
+                  <label className="form-label">Description *</label>
                   <textarea
                     rows="3"
+                    className="form-control"
                     value={strategyFormData.description}
                     onChange={(e) => setStrategyFormData({ ...strategyFormData, description: e.target.value })}
                     placeholder="Begin lessons with places, people and experiences students already understand."
@@ -1342,22 +1378,24 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'center' }}>
                   <div className="form-group">
-                    <label>Display Order</label>
+                    <label className="form-label">Display Order</label>
                     <input
                       type="number"
+                      className="form-control"
                       value={strategyFormData.display_order}
                       onChange={(e) => setStrategyFormData({ ...strategyFormData, display_order: parseInt(e.target.value) || 0 })}
                     />
                   </div>
 
-                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
                     <input
                       type="checkbox"
                       id="strat_pub"
                       checked={strategyFormData.is_published}
                       onChange={(e) => setStrategyFormData({ ...strategyFormData, is_published: e.target.checked })}
+                      style={{ width: 'auto', cursor: 'pointer' }}
                     />
-                    <label htmlFor="strat_pub" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+                    <label htmlFor="strat_pub" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
                       Published
                     </label>
                   </div>
@@ -1393,9 +1431,10 @@ export const TeacherGuideManager = () => {
             <form onSubmit={handlePromptSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Prompt Question *</label>
+                  <label className="form-label">Prompt Question *</label>
                   <textarea
                     rows="3"
+                    className="form-control"
                     value={promptFormData.prompt}
                     onChange={(e) => setPromptFormData({ ...promptFormData, prompt: e.target.value })}
                     placeholder="e.g. Describe a place in Vehari that is important to you."
@@ -1405,9 +1444,10 @@ export const TeacherGuideManager = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
-                    <label>Category</label>
+                    <label className="form-label">Category</label>
                     <input
                       type="text"
+                      className="form-control"
                       value={promptFormData.category}
                       onChange={(e) => setPromptFormData({ ...promptFormData, category: e.target.value })}
                       placeholder="e.g. Local Community"
@@ -1415,23 +1455,25 @@ export const TeacherGuideManager = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Display Order</label>
+                    <label className="form-label">Display Order</label>
                     <input
                       type="number"
+                      className="form-control"
                       value={promptFormData.display_order}
                       onChange={(e) => setPromptFormData({ ...promptFormData, display_order: parseInt(e.target.value) || 0 })}
                     />
                   </div>
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
                     id="pr_pub"
                     checked={promptFormData.is_published}
                     onChange={(e) => setPromptFormData({ ...promptFormData, is_published: e.target.checked })}
+                    style={{ width: 'auto', cursor: 'pointer' }}
                   />
-                  <label htmlFor="pr_pub" style={{ margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+                  <label htmlFor="pr_pub" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
                     Published
                   </label>
                 </div>
