@@ -771,18 +771,18 @@ export const PublicWebsite = () => {
         <section className="view" id="teacher-guide" style={{ display: 'block' }}>
           {/* 1. HERO SECTION */}
           <section className="page-hero">
-            <div className="container">
+            <div className="container" style={{ textAlign: 'left' }}>
               <span className="eyebrow" style={{ color: '#dcecff' }}>Teacher Guide & Resources</span>
-              <h1 style={{ fontSize: '2.5rem', lineHeight: 1.2, margin: '14px 0 16px' }}>
+              <h1 style={{ fontSize: '2.5rem', lineHeight: 1.2, margin: '14px 0 16px', maxWidth: '900px' }}>
                 {tg?.hero?.title || 'Teacher Guide: Using Local Stories in the English Classroom'}
               </h1>
-              <p className="lead" style={{ maxWidth: '840px', margin: '0 auto 16px', fontSize: '1.2rem', color: '#e0edff', fontWeight: 500 }}>
+              <p className="lead" style={{ maxWidth: '840px', margin: '0 0 16px', fontSize: '1.2rem', color: '#e0edff', fontWeight: 500 }}>
                 {tg?.hero?.subtitle || 'A practical guide for educators using community narratives, oral folklore, and local experiences to make English learning relevant, communicative, and engaging.'}
               </p>
-              <p style={{ maxWidth: '780px', margin: '0 auto 28px', color: '#cadbf5', fontSize: '15px', lineHeight: 1.6 }}>
+              <p style={{ maxWidth: '780px', margin: '0 0 28px', color: '#cadbf5', fontSize: '15px', lineHeight: 1.6 }}>
                 {tg?.hero?.description || 'Contextualized language teaching allows students to connect new English structures with familiar environments, reducing anxiety and dramatically improving communicative participation.'}
               </p>
-              <div className="actions" style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <div className="actions" style={{ display: 'flex', justifyContent: 'flex-start', gap: '14px', flexWrap: 'wrap' }}>
                 <a
                   className="btn primary"
                   href="#teacher-resources"
