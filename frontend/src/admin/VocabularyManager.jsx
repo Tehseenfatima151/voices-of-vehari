@@ -152,7 +152,7 @@ export const VocabularyManager = () => {
       {/* Header */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--navy)', margin: '0 0 4px' }}>📖 Vocabulary Manager</h2>
+          <h2 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--navy)', margin: '0 0 4px' }}>Vocabulary Manager</h2>
           <p style={{ color: 'var(--muted)', margin: 0, fontSize: '14px' }}>
             Manage vocabulary words shown on the public Vocabulary page · {words.length} words total
           </p>
@@ -165,7 +165,7 @@ export const VocabularyManager = () => {
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             className="admin-input"
-            placeholder="🔍 Search words, meanings..."
+            placeholder="Search words, meanings..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ flex: '1', minWidth: '200px' }}
@@ -261,59 +261,97 @@ export const VocabularyManager = () => {
               </h3>
               <button className="modal-close" onClick={closeModal}>✕</button>
             </div>
-            <form onSubmit={handleSave} style={{ padding: '24px', display: 'grid', gap: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label className="admin-label">Word *</label>
-                  <input className="admin-input" required placeholder="e.g. Resilience"
-                    value={form.word} onChange={(e) => setForm({ ...form, word: e.target.value })} />
+            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+              {/* Row 1: Word + Part of Speech */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Word *</label>
+                  <input
+                    required
+                    placeholder="e.g. Resilience"
+                    value={form.word}
+                    onChange={(e) => setForm({ ...form, word: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', color: '#1e293b' }}
+                  />
                 </div>
-                <div>
-                  <label className="admin-label">Part of Speech *</label>
-                  <select className="admin-input" value={form.part_of_speech} onChange={(e) => setForm({ ...form, part_of_speech: e.target.value })}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Part of Speech *</label>
+                  <select
+                    value={form.part_of_speech}
+                    onChange={(e) => setForm({ ...form, part_of_speech: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white', color: '#1e293b' }}
+                  >
                     {PARTS_OF_SPEECH.map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="admin-label">Meaning / Definition *</label>
-                <textarea className="admin-input" required rows={3} placeholder="A clear, student-friendly definition..."
-                  value={form.meaning} onChange={(e) => setForm({ ...form, meaning: e.target.value })}
-                  style={{ resize: 'vertical' }} />
+              {/* Row 2: Meaning */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Meaning / Definition *</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="A clear, student-friendly definition..."
+                  value={form.meaning}
+                  onChange={(e) => setForm({ ...form, meaning: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#1e293b' }}
+                />
               </div>
 
-              <div>
-                <label className="admin-label">Example Sentence</label>
-                <textarea className="admin-input" rows={2} placeholder="Use the word in a sentence from a local context..."
-                  value={form.example_sentence} onChange={(e) => setForm({ ...form, example_sentence: e.target.value })}
-                  style={{ resize: 'vertical' }} />
+              {/* Row 3: Example Sentence */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Example Sentence</label>
+                <textarea
+                  rows={2}
+                  placeholder="Use the word in a sentence from a local Vehari context..."
+                  value={form.example_sentence}
+                  onChange={(e) => setForm({ ...form, example_sentence: e.target.value })}
+                  style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', color: '#1e293b' }}
+                />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label className="admin-label">Category</label>
-                  <select className="admin-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              {/* Row 4: Category + Level + Display Order */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Category</label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white', color: '#1e293b' }}
+                  >
                     {CATEGORIES.filter((c) => c !== 'All').map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="admin-label">Level</label>
-                  <select className="admin-input" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Level</label>
+                  <select
+                    value={form.level}
+                    onChange={(e) => setForm({ ...form, level: e.target.value })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white', color: '#1e293b' }}
+                  >
                     {LEVELS.filter((l) => l !== 'All').map((l) => <option key={l}>{l}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="admin-label">Display Order</label>
-                  <input className="admin-input" type="number" min="0"
-                    value={form.display_order} onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.display_order}
+                    onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #d1d5db', borderRadius: '8px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', color: '#1e293b' }}
+                  />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {/* Row 5: Publish checkbox */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <input type="checkbox" id="vocab-published" checked={form.is_published}
-                  onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
-                <label htmlFor="vocab-published" style={{ fontSize: '14px', color: 'var(--ink)', cursor: 'pointer' }}>
+                  onChange={(e) => setForm({ ...form, is_published: e.target.checked })}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                <label htmlFor="vocab-published" style={{ fontSize: '14px', color: 'var(--ink)', cursor: 'pointer', fontWeight: 500 }}>
                   Publish immediately (visible on public site)
                 </label>
               </div>

@@ -921,7 +921,7 @@ export const PublicWebsite = () => {
                       style={{ alignSelf: 'flex-start', marginTop: 'auto' }}
                       onClick={() => setActiveResourceModal(res)}
                     >
-                      ðŸ“– Read Guide & Steps
+                       Read Guide & Steps
                     </button>
                   </div>
                 ))}
@@ -1572,7 +1572,7 @@ export const PublicWebsite = () => {
                 <p>Know someone with a meaningful story or expertise relevant to Vehari?</p>
               </div>
               <div className="card">
-                <h3>ðŸ“– Share a story</h3>
+                <h3> Share a story</h3>
                 <p>Help document a local tradition, experience or community narrative.</p>
               </div>
               <div className="card">
@@ -1839,20 +1839,18 @@ export const PublicWebsite = () => {
             <div style={{ background: 'linear-gradient(135deg, var(--navy,#1e3a5f) 0%, #2d5986 100%)', color: 'white', padding: '64px 24px 48px', textAlign: 'center' }}>
               <div style={{ maxWidth: '760px', margin: '0 auto' }}>
                 <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: '20px', padding: '6px 18px', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '18px' }}>
-                  ðŸ“– ENGLISH VOCABULARY
+                  ENGLISH VOCABULARY
                 </div>
-                <h1 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, margin: '0 0 16px', lineHeight: 1.2 }}>
+                <h1 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, margin: '0 0 16px', lineHeight: 1.2, color: 'white' }}>
                   Vocabulary
                 </h1>
                 <p style={{ fontSize: '18px', opacity: 0.88, margin: '0 0 28px', lineHeight: 1.6 }}>
                   Explore key English words drawn from the culture, community and everyday life of Vehari. Build your vocabulary with clear definitions and local examples.
                 </p>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 600 }}>
-                  <span>ðŸ“š {publishedWords.length} Words</span>
-                  <span>â€¢</span>
-                  <span>ðŸ—‚ï¸ {VOCAB_CATS.length - 1} Categories</span>
-                  <span>â€¢</span>
-                  <span>ðŸ“Š 3 Levels</span>
+                <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', color: 'rgba(255,255,255,0.85)', fontSize: '15px', fontWeight: 600 }}>
+                  <span style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '4px 14px' }}>{publishedWords.length} Words</span>
+                  <span style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '4px 14px' }}>{VOCAB_CATS.length - 1} Categories</span>
+                  <span style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '4px 14px' }}>3 Levels</span>
                 </div>
               </div>
             </div>
@@ -1862,7 +1860,7 @@ export const PublicWebsite = () => {
               <div style={{ background: 'white', borderRadius: '16px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', marginBottom: '28px' }}>
                 <input
                   type="search"
-                  placeholder="ðŸ” Search words, meanings, examples..."
+                  placeholder="Search words, meanings, examples..."
                   value={vocabSearch}
                   onChange={(e) => setVocabSearch(e.target.value)}
                   style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '15px', outline: 'none', boxSizing: 'border-box', marginBottom: '16px' }}
@@ -1916,7 +1914,7 @@ export const PublicWebsite = () => {
               {/* Cards Grid */}
               {filteredWords.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 24px', background: 'white', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>ðŸ“­</div>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
                   <h3 style={{ color: 'var(--navy,#1e3a5f)', marginBottom: '8px' }}>No words found</h3>
                   <p style={{ color: '#64748b', marginBottom: '20px' }}>Try a different search term or filter.</p>
                   <button onClick={() => { setVocabSearch(''); setVocabCat('All'); setVocabLevel('All'); }}
