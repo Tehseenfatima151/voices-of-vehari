@@ -7,7 +7,7 @@ from app.models import (
     Podcast, Story, GalleryItem, TeamMember,
     TimelineItem, AcademicReference, ContactSubmission, MediaFile,
     TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
-    TeacherGuidePrompt, TeacherGuideLessonPlan
+    TeacherGuidePrompt, TeacherGuideLessonPlan, VocabularyWord
 )
 
 admin_cms_bp = Blueprint('admin_cms', __name__, url_prefix='/api/admin')
@@ -955,3 +955,73 @@ def update_teacher_lesson_plan():
 
     db.session.commit()
     return jsonify({'success': True, 'message': 'Lesson plan template updated successfully', 'data': lp.to_dict()}), 200
+
+# ================= VOCABULARY =================
+@admin_cms_bp.route('/vocabulary', methods=['GET'])
+@jwt_required()
+def get_admin_vocabulary():
+    words = VocabularyWord.query.order_by(VocabularyWord.display_order.asc(), VocabularyWord.id.asc()).all()
+    return jsonify({'success': True, 'data': [w.to_dict() for w in words]}), 200
+
+@admin_cms_bp.route('/vocabulary', methods=['POST'])
+@jwt_required()
+def create_vocabulary_word():
+    data = request.get_json() or {}
+    word_text = (data.get('word') or '').strip()
+    meaning = (data.get('meaning') or '').strip()
+    if not word_text:
+        return jsonify({'success': False, 'message': 'Word is required'}), 400
+    if not meaning:
+        return jsonify({'success': False, 'message': 'Meaning is required'}), 400
+
+    word = VocabularyWord(
+        word=word_text,
+        part_of_speech=data.get('part_of_speech', 'noun'),
+        meaning=meaning,
+        example_sentence=data.get('example_sentence', ''),
+        category=data.get('category', 'General'),
+        level=data.get('level', 'Intermediate'),
+        display_order=data.get('display_order', 0),
+        is_published=data.get('is_published', True)
+    )
+    db.session.add(word)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Word created successfully', 'data': word.to_dict()}), 201
+
+@admin_cms_bp.route('/vocabulary/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_vocabulary_word(id):
+    word = db.session.get(VocabularyWord, id)
+    if not word:
+        return jsonify({'success': False, 'message': 'Word not found'}), 404
+
+    data = request.get_json() or {}
+    for field in ['word', 'part_of_speech', 'meaning', 'example_sentence', 'category', 'level', 'display_order', 'is_published']:
+        if field in data:
+            setattr(word, field, data[field])
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Word updated successfully', 'data': word.to_dict()}), 200
+
+@admin_cms_bp.route('/vocabulary/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_vocabulary_word(id):
+    word = db.session.get(VocabularyWord, id)
+    if not word:
+        return jsonify({'success': False, 'message': 'Word not found'}), 404
+
+    db.session.delete(word)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Word deleted successfully'}), 200
+
+@admin_cms_bp.route('/vocabulary/<int:id>/toggle-publish', methods=['PATCH'])
+@jwt_required()
+def toggle_vocabulary_publish(id):
+    word = db.session.get(VocabularyWord, id)
+    if not word:
+        return jsonify({'success': False, 'message': 'Word not found'}), 404
+
+    word.is_published = not word.is_published
+    db.session.commit()
+    status_str = 'published' if word.is_published else 'unpublished'
+    return jsonify({'success': True, 'message': f'Word is now {status_str}', 'data': word.to_dict()}), 200

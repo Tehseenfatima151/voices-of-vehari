@@ -236,6 +236,7 @@ export const api = {
       gallery: getStorageItem('vov_cms_gallery', fallbackData.gallery),
       team: getStorageItem('vov_cms_team', fallbackData.team),
       teacherGuide: buildTeacherGuidePayload(),
+      vocabulary: getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
     };
   },
 
@@ -1266,6 +1267,84 @@ export const api = {
       return res.data;
     } catch {
       return { success: true, message: 'Lesson plan template updated successfully', data: fullPlan };
+    }
+  },
+
+  // ================= VOCABULARY =================
+  getAdminVocabulary: async () => {
+    try {
+      const res = await apiClient.get('/api/admin/vocabulary');
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_vocabulary', res.data.data);
+        return res.data.data;
+      }
+    } catch {
+      // Fallback below
+    }
+    return getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+  },
+
+  createVocabularyWord: async (data) => {
+    const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+    const newWord = {
+      ...data,
+      id: Date.now(),
+      display_order: Number(data.display_order) || (list.length + 1),
+      is_published: data.is_published !== undefined ? data.is_published : true,
+    };
+    try {
+      const res = await apiClient.post('/api/admin/vocabulary', data);
+      const serverWord = res.data?.data || newWord;
+      setStorageItem('vov_cms_vocabulary', [...list, serverWord]);
+      notifyStorageUpdate();
+      return res.data;
+    } catch {
+      setStorageItem('vov_cms_vocabulary', [...list, newWord]);
+      notifyStorageUpdate();
+      return { success: true, message: 'Word created successfully', data: newWord };
+    }
+  },
+
+  updateVocabularyWord: async (id, data) => {
+    const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+    const updated = list.map((w) =>
+      (w.id === id || w.id === Number(id)) ? { ...w, ...data } : w
+    );
+    setStorageItem('vov_cms_vocabulary', updated);
+    notifyStorageUpdate();
+    try {
+      const res = await apiClient.put(`/api/admin/vocabulary/${id}`, data);
+      return res.data;
+    } catch {
+      return { success: true, message: 'Word updated successfully' };
+    }
+  },
+
+  deleteVocabularyWord: async (id) => {
+    const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+    const updated = list.filter((w) => w.id !== id && w.id !== Number(id));
+    setStorageItem('vov_cms_vocabulary', updated);
+    notifyStorageUpdate();
+    try {
+      const res = await apiClient.delete(`/api/admin/vocabulary/${id}`);
+      return res.data;
+    } catch {
+      return { success: true, message: 'Word deleted successfully' };
+    }
+  },
+
+  toggleVocabularyPublish: async (id) => {
+    const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+    const updated = list.map((w) =>
+      (w.id === id || w.id === Number(id)) ? { ...w, is_published: !w.is_published } : w
+    );
+    setStorageItem('vov_cms_vocabulary', updated);
+    notifyStorageUpdate();
+    try {
+      const res = await apiClient.patch(`/api/admin/vocabulary/${id}/toggle-publish`);
+      return res.data;
+    } catch {
+      return { success: true, message: 'Status toggled successfully' };
     }
   },
 };

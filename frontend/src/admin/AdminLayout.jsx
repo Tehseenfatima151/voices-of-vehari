@@ -37,6 +37,7 @@ export const AdminLayout = () => {
     { path: '/admin/podcasts', icon: '🎙️', label: 'Podcasts' },
     { path: '/admin/stories', icon: '📖', label: 'Stories' },
     { path: '/admin/teacher-guide', icon: '📚', label: 'Teacher Guide' },
+    { path: '/admin/vocabulary', icon: '📖', label: 'Vocabulary' },
     { path: '/admin/gallery', icon: '🖼️', label: 'Gallery' },
     { path: '/admin/team', icon: '👥', label: 'Team Members' },
     { path: '/admin/cards', icon: '🗂️', label: 'Content Cards' },

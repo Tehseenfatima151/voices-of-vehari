@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -23,6 +23,10 @@ export const PublicWebsite = () => {
   const [selectedTeacherCategory, setSelectedTeacherCategory] = useState('All'); // for teacher guide category filter
   const [activeResourceModal, setActiveResourceModal] = useState(null); // for teacher guide read more modal
   const [copiedPromptIndex, setCopiedPromptIndex] = useState(null); // for copy prompt toast feedback
+  // Vocabulary page state
+  const [vocabSearch, setVocabSearch] = useState('');
+  const [vocabCat, setVocabCat] = useState('All');
+  const [vocabLevel, setVocabLevel] = useState('All');
   
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -47,6 +51,7 @@ export const PublicWebsite = () => {
     'learning',
     'teacher-guide',
     'audio-transcripts',
+    'vocabulary',
     'gallery',
     'team',
     'outcomes',
@@ -79,7 +84,8 @@ export const PublicWebsite = () => {
     team_by_role = {},
     timeline = [],
     references = [],
-    teacherGuide = fallbackData.teacherGuide
+    teacherGuide = fallbackData.teacherGuide,
+    vocabulary = fallbackData.vocabulary || [],
   } = data || {};
 
   const tg = teacherGuide || fallbackData.teacherGuide;
@@ -545,7 +551,7 @@ export const PublicWebsite = () => {
             <div className="container two-col">
               <div>
                 <span className="eyebrow">Learning cycle</span>
-                <h2>Local language → local story → English practice</h2>
+                <h2>Local language â†’ local story â†’ English practice</h2>
                 <p>Participants encounter meaningful local content, use multilingual support where appropriate, then practise English through listening, vocabulary and speaking activities.</p>
               </div>
               <div className="callout">
@@ -615,7 +621,7 @@ export const PublicWebsite = () => {
                           }}
                           title="Click to play video"
                         >
-                          <span>▶</span> {isYouTubeUrl(pod.video_url) ? 'YouTube Video' : 'Watch Video'}
+                          <span>â–¶</span> {isYouTubeUrl(pod.video_url) ? 'YouTube Video' : 'Watch Video'}
                         </div>
                       )}
                     </div>
@@ -626,7 +632,7 @@ export const PublicWebsite = () => {
                       <h3>{pod.title}</h3>
                       {pod.guest && (
                         <p style={{ margin: '4px 0' }}>
-                          <strong>Guest:</strong> {pod.guest} {pod.host ? `· Host: ${pod.host}` : ''}
+                          <strong>Guest:</strong> {pod.guest} {pod.host ? `Â· Host: ${pod.host}` : ''}
                         </p>
                       )}
                       <p>{pod.description}</p>
@@ -639,7 +645,7 @@ export const PublicWebsite = () => {
                             style={{ background: '#e84118', borderColor: '#c23616' }}
                             onClick={() => setActiveVideoPodcast(pod)}
                           >
-                            ▶ Watch Video
+                            â–¶ Watch Video
                           </button>
                         )}
                         <a className="btn ghost sm" href="#audio-transcripts">Transcript</a>
@@ -707,7 +713,7 @@ export const PublicWebsite = () => {
           <section className="section alt">
             <div className="container callout">
               <span className="eyebrow">Story format</span>
-              <h2>Local language → English → Learning</h2>
+              <h2>Local language â†’ English â†’ Learning</h2>
               <p>Each published story can include the original/local-language version, an English version, audio narration, key vocabulary, comprehension questions and speaking prompts.</p>
             </div>
           </section>
@@ -747,7 +753,7 @@ export const PublicWebsite = () => {
           <section className="section alt">
             <div className="container">
               <span className="eyebrow">Sample activity</span>
-              <h2>Learn from “Women Education in Vehari”</h2>
+              <h2>Learn from â€œWomen Education in Vehariâ€</h2>
               <div className="two-col" style={{ marginTop: '24px' }}>
                 <div className="card">
                   <h3>Before listening</h3>
@@ -898,7 +904,7 @@ export const PublicWebsite = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span className="tag" style={{ margin: 0 }}>{res.category}</span>
                         <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>
-                          ⏱ {res.time || res.estimated_time || '30–45 minutes'}
+                          â± {res.time || res.estimated_time || '30â€“45 minutes'}
                         </span>
                       </div>
                       <h3 style={{ fontSize: '1.2rem', margin: '0 0 10px', lineHeight: 1.35 }}>{res.title}</h3>
@@ -915,7 +921,7 @@ export const PublicWebsite = () => {
                       style={{ alignSelf: 'flex-start', marginTop: 'auto' }}
                       onClick={() => setActiveResourceModal(res)}
                     >
-                      📖 Read Guide & Steps
+                      ðŸ“– Read Guide & Steps
                     </button>
                   </div>
                 ))}
@@ -942,9 +948,9 @@ export const PublicWebsite = () => {
               <div className="card" style={{ border: '2px solid rgba(22, 101, 192, 0.25)', background: 'linear-gradient(135deg, rgba(240, 247, 255, 0.9) 0%, rgba(255, 255, 255, 1) 100%)', padding: '32px' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span className="tag" style={{ background: '#1665c0', color: '#fff', fontWeight: 600 }}>🌟 Classroom Activity of the Month</span>
+                    <span className="tag" style={{ background: '#1665c0', color: '#fff', fontWeight: 600 }}>ðŸŒŸ Classroom Activity of the Month</span>
                     <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 500 }}>
-                      Level: {tg?.featuredActivity?.level || 'Intermediate'} · Duration: {tg?.featuredActivity?.time || '35 minutes'}
+                      Level: {tg?.featuredActivity?.level || 'Intermediate'} Â· Duration: {tg?.featuredActivity?.time || '35 minutes'}
                     </span>
                   </div>
                 </div>
@@ -957,7 +963,7 @@ export const PublicWebsite = () => {
                 <div className="two-col" style={{ gap: '28px', marginTop: '16px' }}>
                   <div>
                     <h4 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#1665c0', marginBottom: '12px' }}>
-                      🎯 Learning Objectives
+                      ðŸŽ¯ Learning Objectives
                     </h4>
                     <ul style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '14px', lineHeight: 1.8 }}>
                       {(tg?.featuredActivity?.objectives || []).map((obj, i) => (
@@ -966,7 +972,7 @@ export const PublicWebsite = () => {
                     </ul>
 
                     <div style={{ marginTop: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(22, 101, 192, 0.08)', borderLeft: '4px solid #1665c0' }}>
-                      <strong style={{ display: 'block', fontSize: '13px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px' }}>💡 Teacher Tip</strong>
+                      <strong style={{ display: 'block', fontSize: '13px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px' }}>ðŸ’¡ Teacher Tip</strong>
                       <p style={{ margin: 0, fontSize: '13.5px', color: '#2d3748', lineHeight: 1.5 }}>
                         {tg?.featuredActivity?.teacherTip || 'Encourage students to choose experiences from their own community, family, school or daily life.'}
                       </p>
@@ -975,7 +981,7 @@ export const PublicWebsite = () => {
 
                   <div>
                     <h4 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#1665c0', marginBottom: '12px' }}>
-                      📋 Step-by-Step Procedure
+                      ðŸ“‹ Step-by-Step Procedure
                     </h4>
                     <ol style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '14px', lineHeight: 1.8 }}>
                       {(tg?.featuredActivity?.steps || []).map((step, i) => (
@@ -1041,7 +1047,7 @@ export const PublicWebsite = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-                        <span style={{ fontSize: '1.2rem', color: '#1665c0', flexShrink: 0 }}>💬</span>
+                        <span style={{ fontSize: '1.2rem', color: '#1665c0', flexShrink: 0 }}>ðŸ’¬</span>
                         <p style={{ margin: 0, fontStyle: 'italic', fontSize: '15px', color: '#2d3748', lineHeight: 1.5, fontWeight: 500 }}>
                           "{promptText}"
                         </p>
@@ -1052,7 +1058,7 @@ export const PublicWebsite = () => {
                         onClick={() => handleCopyPrompt(promptText, pIdx)}
                         style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '6px 12px' }}
                       >
-                        {copiedPromptIndex === pIdx ? '✓ Copied!' : '📋 Copy Prompt'}
+                        {copiedPromptIndex === pIdx ? 'âœ“ Copied!' : 'ðŸ“‹ Copy Prompt'}
                       </button>
                     </div>
                   );
@@ -1076,7 +1082,7 @@ export const PublicWebsite = () => {
                     className="btn primary sm"
                     onClick={() => window.print()}
                   >
-                    🖨 Print / Save Template
+                    ðŸ–¨ Print / Save Template
                   </button>
                 </div>
 
@@ -1177,7 +1183,7 @@ export const PublicWebsite = () => {
                       <span key={ti} className="tag">{t}</span>
                     ))}
                     <h3>{pod.title}</h3>
-                    {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `· Host: ${pod.host}` : ''}</p>}
+                    {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `Â· Host: ${pod.host}` : ''}</p>}
                     <AudioPlayer src={formatAudioUrl(pod.audio_url)} />
                     <div className="actions" style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {pod.video_url && (
@@ -1187,7 +1193,7 @@ export const PublicWebsite = () => {
                           style={{ background: '#e84118', borderColor: '#c23616' }}
                           onClick={() => setActiveVideoPodcast(pod)}
                         >
-                          ▶ Watch Video
+                          â–¶ Watch Video
                         </button>
                       )}
                       <a className="btn ghost sm" href="#transcript">Open transcript</a>
@@ -1204,10 +1210,10 @@ export const PublicWebsite = () => {
                 <span className="eyebrow">Transcript model</span>
                 <h2>One episode, four learning layers.</h2>
                 <ol style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '15px', lineHeight: 1.8 }}>
-                  <li><strong>Original conversation</strong> — preserve the authentic exchange.</li>
-                  <li><strong>English version</strong> — support comprehension and comparison.</li>
-                  <li><strong>Vocabulary</strong> — highlight useful words and phrases.</li>
-                  <li><strong>Practice</strong> — add listening, speaking and reflection activities.</li>
+                  <li><strong>Original conversation</strong> â€” preserve the authentic exchange.</li>
+                  <li><strong>English version</strong> â€” support comprehension and comparison.</li>
+                  <li><strong>Vocabulary</strong> â€” highlight useful words and phrases.</li>
+                  <li><strong>Practice</strong> â€” add listening, speaking and reflection activities.</li>
                 </ol>
               </div>
               <div className="callout">
@@ -1415,7 +1421,7 @@ export const PublicWebsite = () => {
               <h2>Evidence will be added here after assessment.</h2>
               <div className="two-col" style={{ marginTop: '22px' }}>
                 <div className="callout">
-                  <h3>Before → During → After</h3>
+                  <h3>Before â†’ During â†’ After</h3>
                   <p>Use verified project data to show change in listening, speaking and vocabulary performance.</p>
                 </div>
                 <div className="callout">
@@ -1478,7 +1484,7 @@ export const PublicWebsite = () => {
             <div className="container two-col">
               <div>
                 <span className="eyebrow">Project location</span>
-                <h2>{settings.campus || 'COMSATS University Islamabad — Vehari Campus'}</h2>
+                <h2>{settings.campus || 'COMSATS University Islamabad â€” Vehari Campus'}</h2>
                 <p style={{ whiteSpace: 'pre-line', color: 'var(--muted)', fontSize: '16px' }}>
                   {settings.address || 'Mailsi Road, Off Multan Road\nPeer Murad, Vehari\nPunjab, Pakistan'}
                 </p>
@@ -1562,15 +1568,15 @@ export const PublicWebsite = () => {
           <section className="section alt">
             <div className="container three-col">
               <div className="card">
-                <h3>🎙 Suggest a guest</h3>
+                <h3>ðŸŽ™ Suggest a guest</h3>
                 <p>Know someone with a meaningful story or expertise relevant to Vehari?</p>
               </div>
               <div className="card">
-                <h3>📖 Share a story</h3>
+                <h3>ðŸ“– Share a story</h3>
                 <p>Help document a local tradition, experience or community narrative.</p>
               </div>
               <div className="card">
-                <h3>🤝 Collaborate</h3>
+                <h3>ðŸ¤ Collaborate</h3>
                 <p>Teachers, researchers and community organizations can explore partnership opportunities.</p>
               </div>
             </div>
@@ -1625,7 +1631,7 @@ export const PublicWebsite = () => {
                 <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--navy)' }}>{activeVideoPodcast.title}</h3>
                 {activeVideoPodcast.guest && (
                   <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-                    Guest: {activeVideoPodcast.guest} {activeVideoPodcast.host ? `· Host: ${activeVideoPodcast.host}` : ''}
+                    Guest: {activeVideoPodcast.guest} {activeVideoPodcast.host ? `Â· Host: ${activeVideoPodcast.host}` : ''}
                   </div>
                 )}
               </div>
@@ -1642,7 +1648,7 @@ export const PublicWebsite = () => {
                 }}
                 aria-label="Close video player"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -1716,7 +1722,7 @@ export const PublicWebsite = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span className="tag" style={{ margin: 0, fontSize: '11px' }}>{activeResourceModal.category}</span>
                   <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>
-                    ⏱ {activeResourceModal.time} · Level: {activeResourceModal.level}
+                    â± {activeResourceModal.time} Â· Level: {activeResourceModal.level}
                   </span>
                 </div>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--navy, #0f172a)' }}>
@@ -1737,7 +1743,7 @@ export const PublicWebsite = () => {
                 }}
                 aria-label="Close guide"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -1750,7 +1756,7 @@ export const PublicWebsite = () => {
               {(activeResourceModal.details?.objective || activeResourceModal.content) && (
                 <div style={{ marginBottom: '20px', padding: '14px 16px', borderRadius: '10px', background: 'rgba(22, 101, 192, 0.07)', borderLeft: '4px solid #1665c0' }}>
                   <strong style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', color: '#1665c0', marginBottom: '4px', letterSpacing: '0.04em' }}>
-                    🎯 Learning Objective
+                    ðŸŽ¯ Learning Objective
                   </strong>
                   <p style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>
                     {activeResourceModal.details?.objective || activeResourceModal.content}
@@ -1761,7 +1767,7 @@ export const PublicWebsite = () => {
               {((activeResourceModal.details?.materials && activeResourceModal.details.materials.length > 0) || (activeResourceModal.materials && activeResourceModal.materials.length > 0)) && (
                 <div style={{ marginBottom: '22px' }}>
                   <h4 style={{ margin: '0 0 8px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
-                    📦 Materials & Preparation
+                    ðŸ“¦ Materials & Preparation
                   </h4>
                   <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--muted)' }}>
                     {(activeResourceModal.details?.materials || activeResourceModal.materials || []).map((mat, mi) => (
@@ -1774,7 +1780,7 @@ export const PublicWebsite = () => {
               {((activeResourceModal.details?.steps && activeResourceModal.details.steps.length > 0) || (activeResourceModal.steps && activeResourceModal.steps.length > 0)) && (
                 <div>
                   <h4 style={{ margin: '0 0 10px', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569' }}>
-                    📋 Step-by-Step Procedure
+                    ðŸ“‹ Step-by-Step Procedure
                   </h4>
                   <ol style={{ margin: 0, paddingLeft: '20px', color: '#334155' }}>
                     {(activeResourceModal.details?.steps || activeResourceModal.steps || []).map((stp, si) => (
@@ -1810,6 +1816,150 @@ export const PublicWebsite = () => {
       )}
 
       <Footer settings={settings} />
+
+      {/* ==================== VOCABULARY PAGE ==================== */}
+      {currentView === 'vocabulary' && (() => {
+        const VOCAB_CATS = ['All', 'Education', 'Community', 'Culture', 'Nature', 'Daily Life', 'Academic', 'Communication'];
+        const publishedWords = (vocabulary || []).filter((w) => w.is_published !== false);
+        const filteredWords = publishedWords.filter((w) => {
+          const q = vocabSearch.toLowerCase();
+          const matchSearch = !q || w.word?.toLowerCase().includes(q) || w.meaning?.toLowerCase().includes(q) || w.example_sentence?.toLowerCase().includes(q);
+          const matchCat = vocabCat === 'All' || w.category === vocabCat;
+          const matchLevel = vocabLevel === 'All' || w.level === vocabLevel;
+          return matchSearch && matchCat && matchLevel;
+        });
+        const levelColor = (level) => {
+          if (level === 'Beginner') return { bg: '#e8f5e9', color: '#2e7d32', border: '#a5d6a7' };
+          if (level === 'Advanced') return { bg: '#fce4ec', color: '#c62828', border: '#f48fb1' };
+          return { bg: '#e3f2fd', color: '#1565c0', border: '#90caf9' };
+        };
+        return (
+          <div style={{ minHeight: '80vh', background: '#f8fafc' }}>
+            {/* Hero */}
+            <div style={{ background: 'linear-gradient(135deg, var(--navy,#1e3a5f) 0%, #2d5986 100%)', color: 'white', padding: '64px 24px 48px', textAlign: 'center' }}>
+              <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+                <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: '20px', padding: '6px 18px', fontSize: '13px', fontWeight: 700, letterSpacing: '0.06em', marginBottom: '18px' }}>
+                  ðŸ“– ENGLISH VOCABULARY
+                </div>
+                <h1 style={{ fontSize: 'clamp(28px,5vw,48px)', fontWeight: 900, margin: '0 0 16px', lineHeight: 1.2 }}>
+                  Vocabulary
+                </h1>
+                <p style={{ fontSize: '18px', opacity: 0.88, margin: '0 0 28px', lineHeight: 1.6 }}>
+                  Explore key English words drawn from the culture, community and everyday life of Vehari. Build your vocabulary with clear definitions and local examples.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 600 }}>
+                  <span>ðŸ“š {publishedWords.length} Words</span>
+                  <span>â€¢</span>
+                  <span>ðŸ—‚ï¸ {VOCAB_CATS.length - 1} Categories</span>
+                  <span>â€¢</span>
+                  <span>ðŸ“Š 3 Levels</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px 80px' }}>
+              {/* Search + Filters */}
+              <div style={{ background: 'white', borderRadius: '16px', padding: '20px 24px', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', marginBottom: '28px' }}>
+                <input
+                  type="search"
+                  placeholder="ðŸ” Search words, meanings, examples..."
+                  value={vocabSearch}
+                  onChange={(e) => setVocabSearch(e.target.value)}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '15px', outline: 'none', boxSizing: 'border-box', marginBottom: '16px' }}
+                />
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {VOCAB_CATS.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setVocabCat(cat)}
+                      style={{
+                        padding: '6px 14px', borderRadius: '20px', border: '1.5px solid',
+                        borderColor: vocabCat === cat ? 'var(--navy,#1e3a5f)' : '#e2e8f0',
+                        background: vocabCat === cat ? 'var(--navy,#1e3a5f)' : 'white',
+                        color: vocabCat === cat ? 'white' : '#334155',
+                        fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >{cat}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Level:</span>
+                  {['All', 'Beginner', 'Intermediate', 'Advanced'].map((lv) => {
+                    const lc = levelColor(lv);
+                    const active = vocabLevel === lv;
+                    return (
+                      <button key={lv} onClick={() => setVocabLevel(lv)} style={{
+                        padding: '4px 12px', borderRadius: '16px', border: '1.5px solid',
+                        borderColor: active ? (lv === 'All' ? 'var(--navy,#1e3a5f)' : lc.border) : '#e2e8f0',
+                        background: active ? (lv === 'All' ? 'var(--navy,#1e3a5f)' : lc.bg) : 'white',
+                        color: active ? (lv === 'All' ? 'white' : lc.color) : '#334155',
+                        fontSize: '12px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                      }}>{lv}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Word count */}
+              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#64748b', fontWeight: 600 }}>
+                  Showing <strong>{filteredWords.length}</strong> of <strong>{publishedWords.length}</strong> words
+                </p>
+                {(vocabSearch || vocabCat !== 'All' || vocabLevel !== 'All') && (
+                  <button onClick={() => { setVocabSearch(''); setVocabCat('All'); setVocabLevel('All'); }}
+                    style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px', color: '#64748b' }}>
+                    Clear Filters âœ•
+                  </button>
+                )}
+              </div>
+
+              {/* Cards Grid */}
+              {filteredWords.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 24px', background: 'white', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>ðŸ“­</div>
+                  <h3 style={{ color: 'var(--navy,#1e3a5f)', marginBottom: '8px' }}>No words found</h3>
+                  <p style={{ color: '#64748b', marginBottom: '20px' }}>Try a different search term or filter.</p>
+                  <button onClick={() => { setVocabSearch(''); setVocabCat('All'); setVocabLevel('All'); }}
+                    style={{ background: 'var(--navy,#1e3a5f)', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 24px', cursor: 'pointer', fontWeight: 700 }}>
+                    Clear Filters
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                  {filteredWords.map((w) => {
+                    const lc = levelColor(w.level);
+                    return (
+                      <div key={w.id} style={{
+                        background: 'white', borderRadius: '16px', padding: '24px',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #f1f5f9',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                      }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)'; }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: 'var(--navy,#1e3a5f)' }}>{w.word}</h3>
+                          <span style={{ padding: '3px 9px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, background: lc.bg, color: lc.color, border: `1px solid ${lc.border}`, flexShrink: 0 }}>{w.level}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '12px', fontStyle: 'italic', color: '#64748b', background: '#f8fafc', padding: '2px 8px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>{w.part_of_speech}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, background: '#f0f4ff', color: 'var(--navy,#1e3a5f)', padding: '2px 8px', borderRadius: '10px' }}>{w.category}</span>
+                        </div>
+                        <p style={{ margin: '0 0 12px', fontSize: '14px', color: '#334155', lineHeight: 1.6 }}>{w.meaning}</p>
+                        {w.example_sentence && (
+                          <div style={{ background: '#f8fafc', borderLeft: '3px solid var(--teal,#2a9d8f)', borderRadius: '0 8px 8px 0', padding: '10px 12px' }}>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#475569', fontStyle: 'italic', lineHeight: 1.5 }}>"{w.example_sentence}"</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

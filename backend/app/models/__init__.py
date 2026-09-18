@@ -18,6 +18,7 @@ from app.models.teacher_guide import (
     TeacherGuidePrompt,
     TeacherGuideLessonPlan
 )
+from app.models.vocabulary import VocabularyWord
 
 __all__ = [
     'AdminUser',
@@ -37,5 +38,6 @@ __all__ = [
     'TeacherGuideActivity',
     'TeacherGuideStrategy',
     'TeacherGuidePrompt',
-    'TeacherGuideLessonPlan'
+    'TeacherGuideLessonPlan',
+    'VocabularyWord'
 ]

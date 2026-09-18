@@ -8,7 +8,7 @@ from app.models import (
     Podcast, Story, GalleryItem, TeamMember,
     TimelineItem, AcademicReference, MediaFile,
     TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
-    TeacherGuidePrompt, TeacherGuideLessonPlan
+    TeacherGuidePrompt, TeacherGuideLessonPlan, VocabularyWord
 )
 
 def seed_database(app=None):
@@ -645,6 +645,35 @@ def seed_database(app=None):
             )
             db.session.add(lp)
             print("Seeded Teacher Guide Lesson Plan Template")
+
+        # 18. Seed Vocabulary Words
+        if VocabularyWord.query.count() == 0:
+            vocab_data = [
+                ('Oral tradition', 'noun', 'The practice of passing stories, history and knowledge from one generation to the next through speaking rather than writing.', 'The oral tradition of Vehari keeps local folklore alive through storytelling sessions.', 'Culture', 'Intermediate', 1),
+                ('Multilingual', 'adjective', 'Able to speak or communicate in several languages; involving or using multiple languages.', 'Vehari students grow up in a multilingual environment, switching between Punjabi, Saraiki and Urdu daily.', 'Education', 'Intermediate', 2),
+                ('Community', 'noun', 'A group of people living in the same area or sharing common interests, backgrounds, or values.', 'The community gathered at the local school to celebrate the harvest festival together.', 'Community', 'Beginner', 3),
+                ('Artisan', 'noun', 'A skilled worker who makes things by hand, using traditional methods and craftsmanship.', 'The artisan carefully wove the colorful fabric using techniques passed down through generations.', 'Culture', 'Intermediate', 4),
+                ('Resilience', 'noun', 'The ability to recover quickly from difficult situations; toughness and strength in the face of challenges.', 'The resilience of farmers in Vehari is evident in how they rebuild after each difficult season.', 'Academic', 'Advanced', 5),
+                ('Fluency', 'noun', 'The ability to speak or write a language easily, smoothly and accurately.', 'Regular podcast recording helped students develop fluency in speaking English naturally.', 'Education', 'Intermediate', 6),
+                ('Bazaar', 'noun', 'A traditional open-air market where a variety of goods are sold, common in South Asia.', 'The weekly bazaar in the town center fills with the smell of fresh spices and colorful cloth.', 'Daily Life', 'Beginner', 7),
+                ('Narrate', 'verb', 'To tell a story or give an account of events, experiences, or ideas in spoken or written form.', 'Students were asked to narrate a childhood memory in English during the podcast session.', 'Communication', 'Intermediate', 8),
+                ('Irrigation', 'noun', 'The process of supplying water to agricultural land through channels, pipes, or streams to help crops grow.', 'Irrigation canals run through the farmlands of Vehari, supporting wheat and cotton crops.', 'Nature', 'Intermediate', 9),
+                ('Empathy', 'noun', 'The ability to understand and share the feelings of another person; compassion and emotional understanding.', 'Good teachers show empathy toward students who struggle with a new language or concept.', 'Academic', 'Advanced', 10),
+                ('Dialect', 'noun', 'A variety of a language spoken in a particular region or by a particular social group, with its own vocabulary and pronunciation.', 'Saraiki is a dialect widely spoken in southern Punjab, including the Vehari region.', 'Communication', 'Advanced', 11),
+                ('Hospitality', 'noun', 'The friendly and generous reception and entertainment of guests or strangers; warmth and openness toward others.', 'Hospitality is deeply valued in Vehari culture, where guests are always welcomed with food and tea.', 'Culture', 'Beginner', 12),
+            ]
+            for word, pos, meaning, example, cat, level, order in vocab_data:
+                db.session.add(VocabularyWord(
+                    word=word,
+                    part_of_speech=pos,
+                    meaning=meaning,
+                    example_sentence=example,
+                    category=cat,
+                    level=level,
+                    display_order=order,
+                    is_published=True
+                ))
+            print("Seeded Vocabulary Words")
 
         try:
             db.session.commit()

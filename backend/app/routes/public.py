@@ -6,7 +6,7 @@ from app.models import (
     Podcast, Story, GalleryItem, TeamMember,
     TimelineItem, AcademicReference, ContactSubmission,
     TeacherGuideArticle, TeacherGuideActivity, TeacherGuideStrategy,
-    TeacherGuidePrompt, TeacherGuideLessonPlan
+    TeacherGuidePrompt, TeacherGuideLessonPlan, VocabularyWord
 )
 
 public_bp = Blueprint('public', __name__, url_prefix='/api')
@@ -86,6 +86,9 @@ def get_all_public_content():
         ]
     }
 
+    # Vocabulary Words
+    vocab_words = VocabularyWord.query.filter_by(is_published=True).order_by(VocabularyWord.display_order.asc(), VocabularyWord.id.asc()).all()
+
     return jsonify({
         'success': True,
         'data': {
@@ -100,7 +103,8 @@ def get_all_public_content():
             'team_by_role': team_by_role,
             'timeline': [ti.to_dict() for ti in timeline],
             'references': [r.to_dict() for r in references],
-            'teacherGuide': teacher_guide_payload
+            'teacherGuide': teacher_guide_payload,
+            'vocabulary': [v.to_dict() for v in vocab_words],
         }
     }), 200
 

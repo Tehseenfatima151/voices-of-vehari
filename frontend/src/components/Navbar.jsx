@@ -16,6 +16,7 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
     { href: '#stories', label: 'Stories' },
     { href: '#learning', label: 'Learning' },
     { href: '#teacher-guide', label: 'Teacher Guide' },
+    { href: '#vocabulary', label: 'Vocabulary' },
     { href: '#audio-transcripts', label: 'Audio & Transcripts' },
     { href: '#gallery', label: 'Gallery' },
     { href: '#team', label: 'Team' },
