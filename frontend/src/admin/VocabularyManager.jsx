@@ -254,15 +254,39 @@ export const VocabularyManager = () => {
       {/* Add/Edit Modal */}
       {modalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-box" style={{ maxWidth: '600px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div
+            className="modal-box"
+            style={{
+              maxWidth: '600px',
+              width: '95%',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sticky header */}
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: '20px', color: 'var(--navy)', fontWeight: 800 }}>
-                {editingWord ? '✏️ Edit Word' : '➕ Add New Word'}
+                {editingWord ? 'Edit Word' : '+ Add New Word'}
               </h3>
-              <button className="modal-close" onClick={closeModal}>✕</button>
+              <button className="modal-close" onClick={closeModal}>x</button>
             </div>
-            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
+            {/* Scrollable body */}
+            <form
+              id="vocab-form"
+              onSubmit={handleSave}
+              style={{
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '18px',
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
               {/* Row 1: Word + Part of Speech */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -355,14 +379,23 @@ export const VocabularyManager = () => {
                   Publish immediately (visible on public site)
                 </label>
               </div>
-
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
-                <button type="button" className="btn ghost" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="btn primary" disabled={saving}>
-                  {saving ? 'Saving...' : (editingWord ? 'Save Changes' : 'Add Word')}
-                </button>
-              </div>
             </form>
+
+            {/* Sticky footer — always visible */}
+            <div style={{
+              flexShrink: 0,
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              padding: '16px 24px',
+              borderTop: '1px solid #e2e8f0',
+              background: 'white',
+            }}>
+              <button type="button" className="btn ghost" onClick={closeModal}>Cancel</button>
+              <button type="submit" form="vocab-form" className="btn primary" disabled={saving}>
+                {saving ? 'Saving...' : (editingWord ? 'Save Changes' : 'Add Word')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -372,8 +405,8 @@ export const VocabularyManager = () => {
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
           <div className="modal-box" style={{ maxWidth: '420px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, color: '#dc2626', fontSize: '18px', fontWeight: 800 }}>🗑️ Delete Word</h3>
-              <button className="modal-close" onClick={() => setDeleteConfirm(null)}>✕</button>
+              <h3 style={{ margin: 0, color: '#dc2626', fontSize: '18px', fontWeight: 800 }}>Delete Word</h3>
+              <button className="modal-close" onClick={() => setDeleteConfirm(null)}>x</button>
             </div>
             <div style={{ padding: '24px' }}>
               <p style={{ marginTop: 0, color: 'var(--ink)' }}>
