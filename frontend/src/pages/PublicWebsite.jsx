@@ -237,12 +237,12 @@ export const PublicWebsite = () => {
     ])),
   ];
 
-  // Filter podcasts by category or tags
+  // Filter podcasts strictly by category
   const filteredPodcasts = podcasts.filter((p) => {
     if (activeTab === 'all') return true;
     const cat = (p.category || '').toLowerCase().trim();
     const target = activeTab.toLowerCase().trim();
-    return cat === target || cat.includes(target) || (p.tags || []).some((t) => t.toLowerCase().trim() === target);
+    return cat === target;
   });
 
   // Filter audio & transcripts
