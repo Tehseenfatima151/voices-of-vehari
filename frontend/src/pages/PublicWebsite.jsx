@@ -14,9 +14,40 @@ import {
   isGoogleDriveUrl
 } from '../utils/mediaUrlHelper';
 
+const getInitialSiteData = () => {
+  try {
+    const rawPodcasts = localStorage.getItem('vov_cms_podcasts');
+    const podcasts = rawPodcasts ? JSON.parse(rawPodcasts) : fallbackData.podcasts;
+    const rawHero = localStorage.getItem('vov_cms_hero');
+    const hero = rawHero ? JSON.parse(rawHero) : fallbackData.hero;
+    const rawSettings = localStorage.getItem('vov_cms_settings');
+    const settings = rawSettings ? JSON.parse(rawSettings) : fallbackData.settings;
+    const rawStories = localStorage.getItem('vov_cms_stories');
+    const stories = rawStories ? JSON.parse(rawStories) : fallbackData.stories;
+    const rawGallery = localStorage.getItem('vov_cms_gallery');
+    const gallery = rawGallery ? JSON.parse(rawGallery) : fallbackData.gallery;
+    const rawTeam = localStorage.getItem('vov_cms_team');
+    const team = rawTeam ? JSON.parse(rawTeam) : fallbackData.team;
+    const rawVocab = localStorage.getItem('vov_cms_vocabulary');
+    const vocabulary = rawVocab ? JSON.parse(rawVocab) : (fallbackData.vocabulary || []);
+    return {
+      ...fallbackData,
+      settings,
+      hero,
+      podcasts,
+      stories,
+      gallery,
+      team,
+      vocabulary,
+    };
+  } catch {
+    return fallbackData;
+  }
+};
+
 export const PublicWebsite = () => {
-  // Initialize with fallbackData so page renders instantaneously with zero blocking delay
-  const [data, setData] = useState(fallbackData);
+  // Initialize with latest storage data immediately so there is zero flicker or stale data
+  const [data, setData] = useState(getInitialSiteData);
   const [activeTab, setActiveTab] = useState('all'); // for podcast filter
   const [audioSearch, setAudioSearch] = useState(''); // for audio transcripts search
   const [activeVideoPodcast, setActiveVideoPodcast] = useState(null); // for video modal

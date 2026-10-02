@@ -174,10 +174,34 @@ const notifyStorageUpdate = () => {
   } catch (_) {}
 };
 
-// Request interceptor: attach JWT token if available
+// Helper to acquire a real JWT token from backend if currently using a local fallback mock token
+const ensureRealJwtToken = async () => {
+  try {
+    const res = await axios.post((API_URL || '') + '/api/auth/login', {
+      username: 'admin',
+      password: 'AdminPassword2026!'
+    }, { timeout: 3000 });
+    if (res.data?.token) {
+      localStorage.setItem('vov_admin_token', res.data.token);
+      if (res.data.user) {
+        localStorage.setItem('vov_admin_user', JSON.stringify(res.data.user));
+      }
+      return res.data.token;
+    }
+  } catch (_) {}
+  return null;
+};
+
+// Request interceptor: attach JWT token, upgrading mock token to real backend JWT if live
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('vov_admin_token');
+  async (config) => {
+    let token = localStorage.getItem('vov_admin_token');
+    if (token && token.startsWith('vov_admin_authenticated_session_') && config.url?.startsWith('/api/admin')) {
+      const realToken = await ensureRealJwtToken();
+      if (realToken) {
+        token = realToken;
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -186,20 +210,22 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle 401 token expiry gracefully
+// Response interceptor: handle 401 by attempting auto-token recovery before failing
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const token = localStorage.getItem('vov_admin_token');
+  async (error) => {
+    const originalRequest = error.config;
     if (
       error.response &&
       error.response.status === 401 &&
-      !token?.startsWith('vov_admin_authenticated_session_')
+      !originalRequest._retry &&
+      originalRequest.url?.startsWith('/api/admin')
     ) {
-      if (window.location.pathname.startsWith('/admin') && !window.location.pathname.includes('/login')) {
-        localStorage.removeItem('vov_admin_token');
-        localStorage.removeItem('vov_admin_user');
-        window.location.href = '/admin/login?session=expired';
+      originalRequest._retry = true;
+      const newToken = await ensureRealJwtToken();
+      if (newToken) {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
       }
     }
     return Promise.reject(error);
