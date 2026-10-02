@@ -222,7 +222,15 @@ export const api = {
     try {
       const res = await apiClient.get('/api/public/all', { timeout: 3500 });
       if (res.data && res.data.data) {
-        return res.data.data;
+        const d = res.data.data;
+        if (d.podcasts) setStorageItem('vov_cms_podcasts', d.podcasts);
+        if (d.stories) setStorageItem('vov_cms_stories', d.stories);
+        if (d.gallery) setStorageItem('vov_cms_gallery', d.gallery);
+        if (d.team) setStorageItem('vov_cms_team', d.team);
+        if (d.vocabulary) setStorageItem('vov_cms_vocabulary', d.vocabulary);
+        if (d.hero) setStorageItem('vov_cms_hero', d.hero);
+        if (d.settings) setStorageItem('vov_cms_settings', d.settings);
+        return d;
       }
     } catch (err) {
       console.warn('Voices of Vehari API unreachable. Rendering with local fallback content.', err?.message || err);
@@ -452,11 +460,16 @@ export const api = {
   },
 
   updateSettings: async (data) => {
+    setStorageItem('vov_cms_settings', data);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put('/api/admin/settings', data);
+      if (res.data?.data) {
+        setStorageItem('vov_cms_settings', res.data.data);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      setStorageItem('vov_cms_settings', data);
       return { success: true, message: 'Settings saved successfully' };
     }
   },
@@ -471,11 +484,16 @@ export const api = {
   },
 
   updateHero: async (data) => {
+    setStorageItem('vov_cms_hero', data);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put('/api/admin/hero', data);
+      if (res.data?.data) {
+        setStorageItem('vov_cms_hero', res.data.data);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      setStorageItem('vov_cms_hero', data);
       return { success: true, message: 'Hero updated successfully' };
     }
   },
@@ -484,57 +502,87 @@ export const api = {
   getAdminPodcasts: async () => {
     try {
       const res = await apiClient.get('/api/admin/podcasts');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_podcasts', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+      // fallback below
     }
+    return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
   },
 
   createPodcast: async (data) => {
+    const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+    const newPod = {
+      ...data,
+      id: Date.now(),
+      sort_order: Number(data.sort_order) || (list.length + 1),
+      is_published: data.is_published !== undefined ? data.is_published : true,
+    };
+    setStorageItem('vov_cms_podcasts', [newPod, ...list]);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.post('/api/admin/podcasts', data);
+      if (res.data?.data) {
+        const serverPod = res.data.data;
+        const serverUpdated = [serverPod, ...list.filter(p => p.id !== serverPod.id && p.id !== newPod.id)];
+        setStorageItem('vov_cms_podcasts', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-      const newPod = { ...data, id: Date.now(), is_published: true };
-      const updated = [newPod, ...list];
-      setStorageItem('vov_cms_podcasts', updated);
       return { success: true, message: 'Podcast created successfully', data: newPod };
     }
   },
 
   updatePodcast: async (id, data) => {
+    const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
+    setStorageItem('vov_cms_podcasts', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/podcasts/${id}`, data);
+      if (res.data?.data) {
+        const serverPod = res.data.data;
+        const serverUpdated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
+        setStorageItem('vov_cms_podcasts', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
-      setStorageItem('vov_cms_podcasts', updated);
       return { success: true, message: 'Podcast updated successfully' };
     }
   },
 
   deletePodcast: async (id) => {
+    const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+    const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
+    setStorageItem('vov_cms_podcasts', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/podcasts/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-      const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
-      setStorageItem('vov_cms_podcasts', updated);
       return { success: true, message: 'Podcast deleted successfully' };
     }
   },
 
   togglePodcastPublish: async (id) => {
+    const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
+    setStorageItem('vov_cms_podcasts', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/podcasts/${id}/toggle-publish`);
+      if (res.data?.data) {
+        const serverPod = res.data.data;
+        const serverUpdated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
+        setStorageItem('vov_cms_podcasts', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-      const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
-      setStorageItem('vov_cms_podcasts', updated);
       return { success: true, message: 'Publish status toggled' };
     }
   },
@@ -543,57 +591,82 @@ export const api = {
   getAdminStories: async () => {
     try {
       const res = await apiClient.get('/api/admin/stories');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_stories', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_stories', fallbackData.stories);
+      // fallback below
     }
+    return getStorageItem('vov_cms_stories', fallbackData.stories);
   },
 
   createStory: async (data) => {
+    const list = getStorageItem('vov_cms_stories', fallbackData.stories);
+    const newStory = { ...data, id: Date.now(), is_published: true };
+    setStorageItem('vov_cms_stories', [newStory, ...list]);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.post('/api/admin/stories', data);
+      if (res.data?.data) {
+        const serverStory = res.data.data;
+        const serverUpdated = [serverStory, ...list.filter(s => s.id !== serverStory.id && s.id !== newStory.id)];
+        setStorageItem('vov_cms_stories', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-      const newStory = { ...data, id: Date.now(), is_published: true };
-      const updated = [newStory, ...list];
-      setStorageItem('vov_cms_stories', updated);
       return { success: true, message: 'Story created successfully', data: newStory };
     }
   },
 
   updateStory: async (id, data) => {
+    const list = getStorageItem('vov_cms_stories', fallbackData.stories);
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
+    setStorageItem('vov_cms_stories', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/stories/${id}`, data);
+      if (res.data?.data) {
+        const serverStory = res.data.data;
+        const serverUpdated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
+        setStorageItem('vov_cms_stories', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
-      setStorageItem('vov_cms_stories', updated);
       return { success: true, message: 'Story updated successfully' };
     }
   },
 
   deleteStory: async (id) => {
+    const list = getStorageItem('vov_cms_stories', fallbackData.stories);
+    const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
+    setStorageItem('vov_cms_stories', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/stories/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-      const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
-      setStorageItem('vov_cms_stories', updated);
       return { success: true, message: 'Story deleted successfully' };
     }
   },
 
   toggleStoryPublish: async (id) => {
+    const list = getStorageItem('vov_cms_stories', fallbackData.stories);
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
+    setStorageItem('vov_cms_stories', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/stories/${id}/toggle-publish`);
+      if (res.data?.data) {
+        const serverStory = res.data.data;
+        const serverUpdated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
+        setStorageItem('vov_cms_stories', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
-      setStorageItem('vov_cms_stories', updated);
       return { success: true, message: 'Publish status toggled' };
     }
   },
@@ -602,45 +675,63 @@ export const api = {
   getAdminGallery: async () => {
     try {
       const res = await apiClient.get('/api/admin/gallery');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_gallery', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_gallery', fallbackData.gallery);
+      // fallback below
     }
+    return getStorageItem('vov_cms_gallery', fallbackData.gallery);
   },
 
   createGalleryItem: async (data) => {
+    const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
+    const newItem = { ...data, id: Date.now(), is_published: true };
+    setStorageItem('vov_cms_gallery', [newItem, ...list]);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.post('/api/admin/gallery', data);
+      if (res.data?.data) {
+        const serverItem = res.data.data;
+        const serverUpdated = [serverItem, ...list.filter(g => g.id !== serverItem.id && g.id !== newItem.id)];
+        setStorageItem('vov_cms_gallery', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
-      const newItem = { ...data, id: Date.now() };
-      const updated = [newItem, ...list];
-      setStorageItem('vov_cms_gallery', updated);
       return { success: true, message: 'Gallery item added successfully', data: newItem };
     }
   },
 
   updateGalleryItem: async (id, data) => {
+    const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
+    const updated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, ...data } : g));
+    setStorageItem('vov_cms_gallery', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/gallery/${id}`, data);
+      if (res.data?.data) {
+        const serverItem = res.data.data;
+        const serverUpdated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, ...serverItem } : g));
+        setStorageItem('vov_cms_gallery', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
-      const updated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, ...data } : g));
-      setStorageItem('vov_cms_gallery', updated);
       return { success: true, message: 'Gallery item updated successfully' };
     }
   },
 
   deleteGalleryItem: async (id) => {
+    const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
+    const updated = list.filter((g) => g.id !== id && g.id !== Number(id));
+    setStorageItem('vov_cms_gallery', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/gallery/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
-      const updated = list.filter((g) => g.id !== id && g.id !== Number(id));
-      setStorageItem('vov_cms_gallery', updated);
       return { success: true, message: 'Gallery item deleted successfully' };
     }
   },
@@ -649,45 +740,63 @@ export const api = {
   getAdminTeam: async () => {
     try {
       const res = await apiClient.get('/api/admin/team');
-      return res.data.data;
+      if (res.data && res.data.data) {
+        setStorageItem('vov_cms_team', res.data.data);
+        return res.data.data;
+      }
     } catch {
-      return getStorageItem('vov_cms_team', fallbackData.team);
+      // fallback below
     }
+    return getStorageItem('vov_cms_team', fallbackData.team);
   },
 
   createTeamMember: async (data) => {
+    const list = getStorageItem('vov_cms_team', fallbackData.team);
+    const newMember = { ...data, id: Date.now() };
+    setStorageItem('vov_cms_team', [newMember, ...list]);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.post('/api/admin/team', data);
+      if (res.data?.data) {
+        const serverMember = res.data.data;
+        const serverUpdated = [serverMember, ...list.filter(m => m.id !== serverMember.id && m.id !== newMember.id)];
+        setStorageItem('vov_cms_team', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_team', fallbackData.team);
-      const newMember = { ...data, id: Date.now() };
-      const updated = [newMember, ...list];
-      setStorageItem('vov_cms_team', updated);
       return { success: true, message: 'Team member added successfully', data: newMember };
     }
   },
 
   updateTeamMember: async (id, data) => {
+    const list = getStorageItem('vov_cms_team', fallbackData.team);
+    const updated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, ...data } : m));
+    setStorageItem('vov_cms_team', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/team/${id}`, data);
+      if (res.data?.data) {
+        const serverMember = res.data.data;
+        const serverUpdated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, ...serverMember } : m));
+        setStorageItem('vov_cms_team', serverUpdated);
+        notifyStorageUpdate();
+      }
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_team', fallbackData.team);
-      const updated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, ...data } : m));
-      setStorageItem('vov_cms_team', updated);
       return { success: true, message: 'Team member updated successfully' };
     }
   },
 
   deleteTeamMember: async (id) => {
+    const list = getStorageItem('vov_cms_team', fallbackData.team);
+    const updated = list.filter((m) => m.id !== id && m.id !== Number(id));
+    setStorageItem('vov_cms_team', updated);
+    notifyStorageUpdate();
     try {
       const res = await apiClient.delete(`/api/admin/team/${id}`);
       return res.data;
     } catch {
-      const list = getStorageItem('vov_cms_team', fallbackData.team);
-      const updated = list.filter((m) => m.id !== id && m.id !== Number(id));
-      setStorageItem('vov_cms_team', updated);
       return { success: true, message: 'Team member deleted successfully' };
     }
   },

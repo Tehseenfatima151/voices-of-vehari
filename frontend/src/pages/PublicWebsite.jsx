@@ -119,6 +119,21 @@ export const PublicWebsite = () => {
     };
   }, []);
 
+  // Sync content whenever current view changes so any admin updates show up immediately
+  useEffect(() => {
+    let isMounted = true;
+    const syncViewData = async () => {
+      try {
+        const result = await api.getPublicAll();
+        if (isMounted && result) {
+          setData(result);
+        }
+      } catch (_) {}
+    };
+    syncViewData();
+    return () => { isMounted = false; };
+  }, [currentView]);
+
   // Update hash when clicking in-page internal links like href="about.html" or href="#about"
   useEffect(() => {
     const handleLinkClicks = (e) => {
@@ -212,10 +227,22 @@ export const PublicWebsite = () => {
     return (r.category || '').toLowerCase() === selectedTeacherCategory.toLowerCase();
   });
 
-  // Filter podcasts
+  // Podcast categories (guaranteeing Education, Culture, Food, General + any custom categories)
+  const basePodcastCategories = ['education', 'culture', 'food', 'general'];
+  const podcastCategories = [
+    'all',
+    ...Array.from(new Set([
+      ...basePodcastCategories,
+      ...podcasts.map((p) => (p.category || '').toLowerCase().trim()).filter(Boolean),
+    ])),
+  ];
+
+  // Filter podcasts by category or tags
   const filteredPodcasts = podcasts.filter((p) => {
     if (activeTab === 'all') return true;
-    return (p.category || '').toLowerCase().includes(activeTab.toLowerCase());
+    const cat = (p.category || '').toLowerCase().trim();
+    const target = activeTab.toLowerCase().trim();
+    return cat === target || cat.includes(target) || (p.tags || []).some((t) => t.toLowerCase().trim() === target);
   });
 
   // Filter audio & transcripts
@@ -581,7 +608,7 @@ export const PublicWebsite = () => {
           <section className="section">
             <div className="container">
               <div className="filters">
-                {['all', 'education', 'culture', 'food'].map((f) => (
+                {podcastCategories.map((f) => (
                   <button
                     key={f}
                     className={`filter ${activeTab === f ? 'active' : ''}`}
@@ -626,9 +653,37 @@ export const PublicWebsite = () => {
                       )}
                     </div>
                     <div className="body">
-                      {(pod.tags || []).map((t, ti) => (
-                        <span key={ti} className="tag">{t}</span>
-                      ))}
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', alignItems: 'center' }}>
+                        {pod.category && (
+                          <span
+                            className="tag category-badge"
+                            style={{
+                              textTransform: 'capitalize',
+                              fontWeight: 700,
+                              background: '#1e3a5f',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '3px 10px',
+                              borderRadius: '20px',
+                              fontSize: '11px',
+                            }}
+                          >
+                            {pod.category}
+                          </span>
+                        )}
+                        {(pod.tags || [])
+                          .filter((t) => {
+                            const tLower = t.toLowerCase().trim();
+                            const catLower = (pod.category || '').toLowerCase().trim();
+                            const knownCats = ['education', 'culture', 'food', 'general'];
+                            if (tLower === catLower) return false;
+                            if (knownCats.includes(tLower) && tLower !== catLower) return false;
+                            return true;
+                          })
+                          .map((t, ti) => (
+                            <span key={ti} className="tag">{t}</span>
+                          ))}
+                      </div>
                       <h3>{pod.title}</h3>
                       {pod.guest && (
                         <p style={{ margin: '4px 0' }}>
@@ -1179,9 +1234,37 @@ export const PublicWebsite = () => {
               <div style={{ marginTop: '26px', display: 'grid', gap: '18px' }}>
                 {filteredAudioList.map((pod) => (
                   <div key={pod.id} className="card">
-                    {(pod.tags || []).map((t, ti) => (
-                      <span key={ti} className="tag">{t}</span>
-                    ))}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px', alignItems: 'center' }}>
+                      {pod.category && (
+                        <span
+                          className="tag category-badge"
+                          style={{
+                            textTransform: 'capitalize',
+                            fontWeight: 700,
+                            background: '#1e3a5f',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '3px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                          }}
+                        >
+                          {pod.category}
+                        </span>
+                      )}
+                      {(pod.tags || [])
+                        .filter((t) => {
+                          const tLower = t.toLowerCase().trim();
+                          const catLower = (pod.category || '').toLowerCase().trim();
+                          const knownCats = ['education', 'culture', 'food', 'general'];
+                          if (tLower === catLower) return false;
+                          if (knownCats.includes(tLower) && tLower !== catLower) return false;
+                          return true;
+                        })
+                        .map((t, ti) => (
+                          <span key={ti} className="tag">{t}</span>
+                        ))}
+                    </div>
                     <h3>{pod.title}</h3>
                     {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `Â· Host: ${pod.host}` : ''}</p>}
                     <AudioPlayer src={formatAudioUrl(pod.audio_url)} />

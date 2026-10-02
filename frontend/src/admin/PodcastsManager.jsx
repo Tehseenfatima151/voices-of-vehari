@@ -334,7 +334,26 @@ export const PodcastsManager = () => {
                     <select
                       className="form-control"
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => {
+                        const newCat = e.target.value;
+                        setFormData((prev) => {
+                          const oldCat = prev.category || '';
+                          const currentTags = (prev.tags || '')
+                            .split(',')
+                            .map((t) => t.trim())
+                            .filter(Boolean);
+                          const updatedTags = currentTags.map((t) =>
+                            t.toLowerCase() === oldCat.toLowerCase()
+                              ? newCat.charAt(0).toUpperCase() + newCat.slice(1)
+                              : t
+                          );
+                          return {
+                            ...prev,
+                            category: newCat,
+                            tags: updatedTags.join(', ') || (newCat.charAt(0).toUpperCase() + newCat.slice(1)),
+                          };
+                        });
+                      }}
                     >
                       <option value="education">Education</option>
                       <option value="culture">Culture</option>
