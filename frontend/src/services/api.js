@@ -12,6 +12,60 @@ const apiClient = axios.create({
   },
 });
 
+// Supabase Direct REST API Configuration
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://bkdyqqkayzbzcpnjqprp.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_hA-e-yW1EgUNZ_xbBzgo8g_xY3NSvFI';
+
+const supabaseClient = axios.create({
+  baseURL: `${SUPABASE_URL}/rest/v1`,
+  timeout: 7000,
+  headers: {
+    apikey: SUPABASE_KEY,
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+  },
+});
+
+const slugify = (text = '') => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+};
+
+const mapPodcastFromSupabase = (pod) => {
+  let tags = [];
+  if (pod.tags_json) {
+    try {
+      tags = typeof pod.tags_json === 'string' ? JSON.parse(pod.tags_json) : pod.tags_json;
+    } catch {
+      tags = [];
+    }
+  } else if (Array.isArray(pod.tags)) {
+    tags = pod.tags;
+  }
+  return {
+    ...pod,
+    tags,
+    category: pod.category || 'general',
+    cover_image_url: pod.cover_image_url || '/assets/podcast_upcoming.jpeg',
+    audio_url: pod.audio_url || '',
+    video_url: pod.video_url || '',
+    is_published: pod.is_published ?? true,
+    sort_order: Number(pod.sort_order) || 0,
+  };
+};
+
+const mapStoryFromSupabase = (st) => ({
+  ...st,
+  is_published: st.is_published ?? true,
+  category_tag: st.category_tag || 'Folklore',
+  sort_order: Number(st.sort_order) || 0,
+});
+
 // Storage helper functions for offline/demo resilience
 const getStorageItem = (key, defaultVal) => {
   try {
@@ -275,8 +329,64 @@ export const api = {
     }
   },
 
-  // ================= PUBLIC ENDPOINTS (WITH GRACEFUL FALLBACK) =================
+  // ================= PUBLIC ENDPOINTS (DIRECT SUPABASE + FALLBACK) =================
   getPublicAll: async () => {
+    try {
+      const [podRes, storyRes, vocabRes, galleryRes, teamRes] = await Promise.allSettled([
+        supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc'),
+        supabaseClient.get('/stories?select=*&order=sort_order.asc,created_at.desc'),
+        supabaseClient.get('/vocabulary_words?select=*&order=display_order.asc,id.asc'),
+        supabaseClient.get('/gallery_items?select=*&order=sort_order.asc,created_at.desc'),
+        supabaseClient.get('/team_members?select=*&order=sort_order.asc'),
+      ]);
+
+      let podcasts = null;
+      if (podRes.status === 'fulfilled' && Array.isArray(podRes.value.data) && podRes.value.data.length > 0) {
+        podcasts = podRes.value.data.map(mapPodcastFromSupabase);
+        setStorageItem('vov_cms_podcasts', podcasts);
+      }
+
+      let stories = null;
+      if (storyRes.status === 'fulfilled' && Array.isArray(storyRes.value.data) && storyRes.value.data.length > 0) {
+        stories = storyRes.value.data.map(mapStoryFromSupabase);
+        setStorageItem('vov_cms_stories', stories);
+      }
+
+      let vocabulary = null;
+      if (vocabRes.status === 'fulfilled' && Array.isArray(vocabRes.value.data) && vocabRes.value.data.length > 0) {
+        vocabulary = vocabRes.value.data;
+        setStorageItem('vov_cms_vocabulary', vocabulary);
+      }
+
+      let gallery = null;
+      if (galleryRes.status === 'fulfilled' && Array.isArray(galleryRes.value.data) && galleryRes.value.data.length > 0) {
+        gallery = galleryRes.value.data;
+        setStorageItem('vov_cms_gallery', gallery);
+      }
+
+      let team = null;
+      if (teamRes.status === 'fulfilled' && Array.isArray(teamRes.value.data) && teamRes.value.data.length > 0) {
+        team = teamRes.value.data;
+        setStorageItem('vov_cms_team', team);
+      }
+
+      if (podcasts || stories) {
+        return {
+          ...fallbackData,
+          settings: getStorageItem('vov_cms_settings', fallbackData.settings),
+          hero: getStorageItem('vov_cms_hero', fallbackData.hero),
+          podcasts: podcasts || getStorageItem('vov_cms_podcasts', fallbackData.podcasts),
+          stories: stories || getStorageItem('vov_cms_stories', fallbackData.stories),
+          gallery: gallery || getStorageItem('vov_cms_gallery', fallbackData.gallery),
+          team: team || getStorageItem('vov_cms_team', fallbackData.team),
+          teacherGuide: buildTeacherGuidePayload(),
+          vocabulary: vocabulary || getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase getPublicAll failed, falling back:', err?.message || err);
+    }
+
     try {
       const res = await apiClient.get('/api/public/all', { timeout: 3500 });
       if (res.data && res.data.data) {
@@ -328,6 +438,14 @@ export const api = {
 
   getPublicPodcasts: async (params) => {
     try {
+      const res = await supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapPodcastFromSupabase);
+        setStorageItem('vov_cms_podcasts', list);
+        return list;
+      }
+    } catch (_) {}
+    try {
       const res = await apiClient.get('/api/public/podcasts', { params, timeout: 3500 });
       if (res.data && res.data.data) {
         return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
@@ -339,6 +457,14 @@ export const api = {
   },
 
   getPublicStories: async () => {
+    try {
+      const res = await supabaseClient.get('/stories?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapStoryFromSupabase);
+        setStorageItem('vov_cms_stories', list);
+        return list;
+      }
+    } catch (_) {}
     try {
       const res = await apiClient.get('/api/public/stories', { timeout: 3500 });
       if (res.data && res.data.data) {
@@ -573,6 +699,14 @@ export const api = {
   // Podcasts
   getAdminPodcasts: async () => {
     try {
+      const res = await supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapPodcastFromSupabase);
+        setStorageItem('vov_cms_podcasts', list);
+        return list;
+      }
+    } catch (_) {}
+    try {
       const res = await apiClient.get('/api/admin/podcasts');
       if (res.data && res.data.data) {
         return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
@@ -585,47 +719,106 @@ export const api = {
 
   createPodcast: async (data) => {
     const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-    const newPod = {
-      ...data,
-      id: Date.now(),
+    const tags = Array.isArray(data.tags) ? data.tags : (data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : []);
+    const payload = {
+      title: data.title || '',
+      slug: data.slug || `${slugify(data.title || 'podcast')}-${Date.now()}`,
+      guest: data.guest || '',
+      host: data.host || '',
+      description: data.description || '',
+      category: data.category || 'general',
+      tags_json: JSON.stringify(tags),
+      audio_url: data.audio_url || '',
+      video_url: data.video_url || '',
+      cover_image_url: data.cover_image_url || '/assets/podcast_upcoming.jpeg',
+      transcript_url: data.transcript_url || '#transcript',
+      learning_url: data.learning_url || 'learning.html',
       sort_order: Number(data.sort_order) || (list.length + 1),
       is_published: data.is_published !== undefined ? data.is_published : true,
+      is_featured: Boolean(data.is_featured),
     };
-    setStorageItem('vov_cms_podcasts', [newPod, ...list]);
+
+    const tempPod = { ...payload, id: Date.now(), tags };
+    setStorageItem('vov_cms_podcasts', [tempPod, ...list]);
     notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.post('/podcasts', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapPodcastFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_podcasts', [tempPod, ...list]);
+        const updated = [saved, ...currentList.filter(p => p.id !== tempPod.id && p.id !== saved.id)];
+        setStorageItem('vov_cms_podcasts', updated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Podcast created successfully' };
+      }
+    } catch (err) {
+      console.warn('Supabase podcast create failed, trying backend API:', err?.message || err);
+    }
+
     try {
       const res = await apiClient.post('/api/admin/podcasts', data);
       if (res.data?.data) {
         const serverPod = res.data.data;
-        const currentList = getStorageItem('vov_cms_podcasts', [newPod, ...list]);
-        const serverUpdated = [serverPod, ...currentList.filter(p => p.id !== serverPod.id && p.id !== newPod.id)];
+        const currentList = getStorageItem('vov_cms_podcasts', [tempPod, ...list]);
+        const serverUpdated = [serverPod, ...currentList.filter(p => p.id !== serverPod.id && p.id !== tempPod.id)];
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
+        return res.data;
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Podcast created successfully', data: newPod };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Podcast created successfully', data: tempPod };
   },
 
   updatePodcast: async (id, data) => {
     const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data, _locallyUpdated: true } : p));
+    const tags = data.tags !== undefined ? (Array.isArray(data.tags) ? data.tags : data.tags.split(',').map(t => t.trim()).filter(Boolean)) : undefined;
+
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    if (tags !== undefined) {
+      patchPayload.tags_json = JSON.stringify(tags);
+      delete patchPayload.tags;
+    }
+
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data, ...(tags ? { tags } : {}) } : p));
     setStorageItem('vov_cms_podcasts', updated);
     notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.patch(`/podcasts?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapPodcastFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_podcasts', updated);
+        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? saved : p));
+        setStorageItem('vov_cms_podcasts', serverUpdated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Podcast updated successfully' };
+      }
+    } catch (err) {
+      console.warn('Supabase podcast update failed, trying backend API:', err?.message || err);
+    }
+
     try {
       const res = await apiClient.put(`/api/admin/podcasts/${id}`, data);
       if (res.data?.data) {
         const serverPod = res.data.data;
         const currentList = getStorageItem('vov_cms_podcasts', updated);
-        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod, _locallyUpdated: undefined } : p));
+        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
       }
       return res.data;
-    } catch {
-      return { success: true, message: 'Podcast updated successfully' };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Podcast updated successfully' };
   },
 
   deletePodcast: async (id) => {
@@ -633,36 +826,52 @@ export const api = {
     const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
     setStorageItem('vov_cms_podcasts', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/podcasts/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Podcast deleted successfully' };
-    }
+      await supabaseClient.delete(`/podcasts?id=eq.${id}`);
+    } catch (_) {}
+
+    try {
+      await apiClient.delete(`/api/admin/podcasts/${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Podcast deleted successfully' };
   },
 
   togglePodcastPublish: async (id) => {
     const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published, _locallyUpdated: true } : p));
+    const target = list.find((p) => p.id === id || p.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: nextStatus } : p));
     setStorageItem('vov_cms_podcasts', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/podcasts/${id}/toggle-publish`);
-      if (res.data?.data) {
-        const serverPod = res.data.data;
+      const res = await supabaseClient.patch(`/podcasts?id=eq.${id}`, { is_published: nextStatus }, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapPodcastFromSupabase(res.data[0]);
         const currentList = getStorageItem('vov_cms_podcasts', updated);
-        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod, _locallyUpdated: undefined } : p));
+        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? saved : p));
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Publish status toggled' };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Publish status toggled' };
   },
 
   // Stories
   getAdminStories: async () => {
+    try {
+      const res = await supabaseClient.get('/stories?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapStoryFromSupabase);
+        setStorageItem('vov_cms_stories', list);
+        return list;
+      }
+    } catch (_) {}
     try {
       const res = await apiClient.get('/api/admin/stories');
       if (res.data && res.data.data) {
@@ -676,42 +885,93 @@ export const api = {
 
   createStory: async (data) => {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-    const newStory = { ...data, id: Date.now(), is_published: true };
-    setStorageItem('vov_cms_stories', [newStory, ...list]);
+    const payload = {
+      title: data.title || '',
+      slug: data.slug || `${slugify(data.title || 'story')}-${Date.now()}`,
+      category_tag: data.category_tag || 'Folklore',
+      excerpt: data.excerpt || '',
+      content: data.content || '',
+      author: data.author || 'Voices of Vehari Team',
+      image_url: data.image_url || '',
+      sort_order: Number(data.sort_order) || (list.length + 1),
+      is_published: data.is_published !== undefined ? data.is_published : true,
+    };
+
+    const tempStory = { ...payload, id: Date.now() };
+    setStorageItem('vov_cms_stories', [tempStory, ...list]);
     notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.post('/stories', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapStoryFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_stories', [tempStory, ...list]);
+        const updated = [saved, ...currentList.filter(s => s.id !== tempStory.id && s.id !== saved.id)];
+        setStorageItem('vov_cms_stories', updated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Story created successfully' };
+      }
+    } catch (err) {
+      console.warn('Supabase story create failed, trying backend API:', err?.message || err);
+    }
+
     try {
       const res = await apiClient.post('/api/admin/stories', data);
       if (res.data?.data) {
         const serverStory = res.data.data;
-        const currentList = getStorageItem('vov_cms_stories', [newStory, ...list]);
-        const serverUpdated = [serverStory, ...currentList.filter(s => s.id !== serverStory.id && s.id !== newStory.id)];
+        const currentList = getStorageItem('vov_cms_stories', [tempStory, ...list]);
+        const serverUpdated = [serverStory, ...currentList.filter(s => s.id !== serverStory.id && s.id !== tempStory.id)];
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
+        return res.data;
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Story created successfully', data: newStory };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Story created successfully', data: tempStory };
   },
 
   updateStory: async (id, data) => {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data, _locallyUpdated: true } : s));
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.patch(`/stories?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapStoryFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_stories', updated);
+        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? saved : s));
+        setStorageItem('vov_cms_stories', serverUpdated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Story updated successfully' };
+      }
+    } catch (err) {
+      console.warn('Supabase story update failed, trying backend API:', err?.message || err);
+    }
+
     try {
       const res = await apiClient.put(`/api/admin/stories/${id}`, data);
       if (res.data?.data) {
         const serverStory = res.data.data;
         const currentList = getStorageItem('vov_cms_stories', updated);
-        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory, _locallyUpdated: undefined } : s));
+        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
       }
       return res.data;
-    } catch {
-      return { success: true, message: 'Story updated successfully' };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Story updated successfully' };
   },
 
   deleteStory: async (id) => {
@@ -719,32 +979,40 @@ export const api = {
     const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/stories/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Story deleted successfully' };
-    }
+      await supabaseClient.delete(`/stories?id=eq.${id}`);
+    } catch (_) {}
+
+    try {
+      await apiClient.delete(`/api/admin/stories/${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Story deleted successfully' };
   },
 
   toggleStoryPublish: async (id) => {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published, _locallyUpdated: true } : s));
+    const target = list.find((s) => s.id === id || s.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: nextStatus } : s));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/stories/${id}/toggle-publish`);
-      if (res.data?.data) {
-        const serverStory = res.data.data;
+      const res = await supabaseClient.patch(`/stories?id=eq.${id}`, { is_published: nextStatus }, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapStoryFromSupabase(res.data[0]);
         const currentList = getStorageItem('vov_cms_stories', updated);
-        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory, _locallyUpdated: undefined } : s));
+        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? saved : s));
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Publish status toggled' };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Publish status toggled' };
   },
 
   // Gallery
@@ -1458,51 +1726,95 @@ export const api = {
   // ================= VOCABULARY =================
   getAdminVocabulary: async () => {
     try {
+      const res = await supabaseClient.get('/vocabulary_words?select=*&order=display_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setStorageItem('vov_cms_vocabulary', res.data);
+        return res.data;
+      }
+    } catch (_) {}
+    try {
       const res = await apiClient.get('/api/admin/vocabulary');
       if (res.data && res.data.data) {
         setStorageItem('vov_cms_vocabulary', res.data.data);
         return res.data.data;
       }
-    } catch {
-      // Fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
   },
 
   createVocabularyWord: async (data) => {
     const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
-    const newWord = {
-      ...data,
-      id: Date.now(),
+    const payload = {
+      word: data.word || '',
+      part_of_speech: data.part_of_speech || 'noun',
+      meaning: data.meaning || '',
+      example_sentence: data.example_sentence || '',
+      category: data.category || 'General',
+      level: data.level || 'Intermediate',
       display_order: Number(data.display_order) || (list.length + 1),
       is_published: data.is_published !== undefined ? data.is_published : true,
     };
+    const tempWord = { ...payload, id: Date.now() };
+    setStorageItem('vov_cms_vocabulary', [...list, tempWord]);
+    notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.post('/vocabulary_words', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = res.data[0];
+        const currentList = getStorageItem('vov_cms_vocabulary', [...list, tempWord]);
+        const updated = [...currentList.filter(w => w.id !== tempWord.id && w.id !== saved.id), saved];
+        setStorageItem('vov_cms_vocabulary', updated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Word created successfully' };
+      }
+    } catch (_) {}
+
     try {
       const res = await apiClient.post('/api/admin/vocabulary', data);
-      const serverWord = res.data?.data || newWord;
-      setStorageItem('vov_cms_vocabulary', [...list, serverWord]);
+      const serverWord = res.data?.data || tempWord;
+      const currentList = getStorageItem('vov_cms_vocabulary', [...list, tempWord]);
+      setStorageItem('vov_cms_vocabulary', [...currentList.filter(w => w.id !== tempWord.id && w.id !== serverWord.id), serverWord]);
       notifyStorageUpdate();
       return res.data;
-    } catch {
-      setStorageItem('vov_cms_vocabulary', [...list, newWord]);
-      notifyStorageUpdate();
-      return { success: true, message: 'Word created successfully', data: newWord };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Word created successfully', data: tempWord };
   },
 
   updateVocabularyWord: async (id, data) => {
     const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
-    const updated = list.map((w) =>
-      (w.id === id || w.id === Number(id)) ? { ...w, ...data } : w
-    );
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
+    const updated = list.map((w) => (w.id === id || w.id === Number(id)) ? { ...w, ...data } : w);
     setStorageItem('vov_cms_vocabulary', updated);
     notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.patch(`/vocabulary_words?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = res.data[0];
+        const currentList = getStorageItem('vov_cms_vocabulary', updated);
+        const serverUpdated = currentList.map((w) => (w.id === id || w.id === Number(id) ? saved : w));
+        setStorageItem('vov_cms_vocabulary', serverUpdated);
+        notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Word updated successfully' };
+      }
+    } catch (_) {}
+
     try {
       const res = await apiClient.put(`/api/admin/vocabulary/${id}`, data);
       return res.data;
-    } catch {
-      return { success: true, message: 'Word updated successfully' };
-    }
+    } catch (_) {}
+
+    return { success: true, message: 'Word updated successfully' };
   },
 
   deleteVocabularyWord: async (id) => {
@@ -1510,27 +1822,40 @@ export const api = {
     const updated = list.filter((w) => w.id !== id && w.id !== Number(id));
     setStorageItem('vov_cms_vocabulary', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/vocabulary/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Word deleted successfully' };
-    }
+      await supabaseClient.delete(`/vocabulary_words?id=eq.${id}`);
+    } catch (_) {}
+
+    try {
+      await apiClient.delete(`/api/admin/vocabulary/${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Word deleted successfully' };
   },
 
   toggleVocabularyPublish: async (id) => {
     const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
-    const updated = list.map((w) =>
-      (w.id === id || w.id === Number(id)) ? { ...w, is_published: !w.is_published } : w
-    );
+    const target = list.find((w) => w.id === id || w.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((w) => (w.id === id || w.id === Number(id)) ? { ...w, is_published: nextStatus } : w);
     setStorageItem('vov_cms_vocabulary', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/vocabulary/${id}/toggle-publish`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Status toggled successfully' };
-    }
+      const res = await supabaseClient.patch(`/vocabulary_words?id=eq.${id}`, { is_published: nextStatus }, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = res.data[0];
+        const currentList = getStorageItem('vov_cms_vocabulary', updated);
+        const serverUpdated = currentList.map((w) => (w.id === id || w.id === Number(id) ? saved : w));
+        setStorageItem('vov_cms_vocabulary', serverUpdated);
+        notifyStorageUpdate();
+      }
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
   },
 };
 
