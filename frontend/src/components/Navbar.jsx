@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { formatImageUrl } from '../utils/mediaUrlHelper';
 
 export const Navbar = ({ settings, activeHash = '#index' }) => {
@@ -50,9 +50,7 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
                 </a>
               );
             })}
-            <Link to="/admin" className="admin-nav-pill" title="Go to Admin CMS Panel">
-              Admin CMS
-            </Link>
+
           </div>
 
           {/* Mobile Hamburger Toggle Button */}
@@ -82,13 +80,7 @@ export const Navbar = ({ settings, activeHash = '#index' }) => {
                 </a>
               );
             })}
-            <Link
-              to="/admin"
-              className="admin-nav-pill-mobile"
-              onClick={() => setMobileOpen(false)}
-            >
-              ⚙ Go to Admin CMS Panel
-            </Link>
+
           </div>
         )}
       </div>

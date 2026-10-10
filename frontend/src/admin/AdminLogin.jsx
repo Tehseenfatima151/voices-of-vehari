@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export const AdminLogin = () => {
-  const [identifier, setIdentifier] = useState('admin');
-  const [password, setPassword] = useState('AdminPassword2026!');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -59,10 +59,12 @@ export const AdminLogin = () => {
             <input
               type="text"
               className="form-control"
+              placeholder="Enter username or email"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               required
               autoFocus
+              autoComplete="username"
             />
           </div>
 
@@ -71,9 +73,11 @@ export const AdminLogin = () => {
             <input
               type="password"
               className="form-control"
+              placeholder="Enter password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </div>
 
