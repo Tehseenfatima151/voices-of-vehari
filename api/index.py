@@ -53,8 +53,43 @@ def vercel_root_ping():
 def vercel_api_health():
     return {'status': 'healthy', 'app': 'Voices of Vehari Backend API'}, 200
 
+@app.route('/api/db-status')
+def vercel_db_status():
+    from app.extensions import db
+    from app.models import Podcast
+    raw_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    masked_uri = raw_uri
+    if '@' in masked_uri:
+        prefix, host = masked_uri.split('@', 1)
+        scheme = prefix.split('://', 1)[0] if '://' in prefix else 'db'
+        masked_uri = f"{scheme}://***:***@{host}"
+    try:
+        count = Podcast.query.count()
+        return {
+            'success': True,
+            'database': 'postgresql' if 'postgresql' in raw_uri else 'sqlite',
+            'podcasts_count': count,
+            'uri': masked_uri,
+        }, 200
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'uri': masked_uri,
+        }, 500
+
+@app.route('/api/db-init', methods=['GET', 'POST'])
+def vercel_db_init():
+    try:
+        with app.app_context():
+            seed_database(app)
+        return {'success': True, 'message': 'Database initialized and seeded successfully'}, 200
+    except Exception as e:
+        return {'success': False, 'error': str(e)}, 500
+
 try:
     with app.app_context():
         seed_database(app)
 except Exception as e:
     print("[INIT DB DEFERRED]", e)
+
