@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -9,7 +9,12 @@ export const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
+
+  useEffect(() => {
+    // When visiting login page, ensure session is reset so user always enters credentials
+    logout();
+  }, []);
   const { addToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
