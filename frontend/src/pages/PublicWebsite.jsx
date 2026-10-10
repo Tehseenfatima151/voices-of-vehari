@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -268,8 +268,9 @@ export const PublicWebsite = () => {
     ])),
   ];
 
-  // Filter podcasts strictly by category
+  // Filter podcasts strictly by category and publication status
   const filteredPodcasts = podcasts.filter((p) => {
+    if (p.is_published === false) return false;
     if (activeTab === 'all') return true;
     const cat = (p.category || '').toLowerCase().trim();
     const target = activeTab.toLowerCase().trim();
@@ -778,7 +779,7 @@ export const PublicWebsite = () => {
                 <p>As fieldwork progresses, replace the placeholders below with verified community stories and photographs.</p>
               </div>
               <div className="cards">
-                {stories.map((st) => (
+                {stories.filter((st) => st.is_published !== false).map((st) => (
                   <div key={st.id} className="card">
                     {st.image_url && (
                       <img

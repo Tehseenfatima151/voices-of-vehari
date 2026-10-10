@@ -28,6 +28,38 @@ const setStorageItem = (key, val) => {
   } catch (_) {}
 };
 
+// Merge server list with local custom additions (identified by timestamp id or not in server)
+// so that user-created podcasts/stories are NEVER wiped out by server responses
+const mergeWithLocalCreations = (serverList = [], storageKey, uniqueField = 'title') => {
+  const localList = getStorageItem(storageKey, []);
+  if (!Array.isArray(localList) || localList.length === 0) {
+    setStorageItem(storageKey, serverList);
+    return serverList;
+  }
+  // Find local items that were created client-side or updated
+  const localAdditions = localList.filter((item) => {
+    const isLocalId = typeof item.id === 'number' && item.id > 1000000000;
+    const existsOnServer = serverList.some(
+      (srv) => srv.id === item.id || (item[uniqueField] && srv[uniqueField] === item[uniqueField])
+    );
+    return isLocalId && !existsOnServer;
+  });
+
+  // Also preserve any local edits if an item was updated while offline
+  const merged = serverList.map((srvItem) => {
+    const localMatch = localList.find((l) => l.id === srvItem.id);
+    if (localMatch && localMatch._locallyUpdated) {
+      return { ...srvItem, ...localMatch, _locallyUpdated: undefined };
+    }
+    return srvItem;
+  });
+
+  const finalList = [...localAdditions, ...merged];
+  setStorageItem(storageKey, finalList);
+  return finalList;
+};
+
+
 // Teacher Guide offline/demo resilience helpers
 const getInitialArticles = () => (fallbackData.teacherGuide?.resources || []).map((a, i) => ({
   ...a,
@@ -249,14 +281,22 @@ export const api = {
       const res = await apiClient.get('/api/public/all', { timeout: 3500 });
       if (res.data && res.data.data) {
         const d = res.data.data;
-        if (d.podcasts) setStorageItem('vov_cms_podcasts', d.podcasts);
-        if (d.stories) setStorageItem('vov_cms_stories', d.stories);
-        if (d.gallery) setStorageItem('vov_cms_gallery', d.gallery);
-        if (d.team) setStorageItem('vov_cms_team', d.team);
-        if (d.vocabulary) setStorageItem('vov_cms_vocabulary', d.vocabulary);
+        const podcasts = d.podcasts ? mergeWithLocalCreations(d.podcasts, 'vov_cms_podcasts', 'title') : getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+        const stories = d.stories ? mergeWithLocalCreations(d.stories, 'vov_cms_stories', 'title') : getStorageItem('vov_cms_stories', fallbackData.stories);
+        const gallery = d.gallery ? mergeWithLocalCreations(d.gallery, 'vov_cms_gallery', 'title') : getStorageItem('vov_cms_gallery', fallbackData.gallery);
+        const team = d.team ? mergeWithLocalCreations(d.team, 'vov_cms_team', 'name') : getStorageItem('vov_cms_team', fallbackData.team);
+        const vocabulary = d.vocabulary ? mergeWithLocalCreations(d.vocabulary, 'vov_cms_vocabulary', 'word') : getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
         if (d.hero) setStorageItem('vov_cms_hero', d.hero);
         if (d.settings) setStorageItem('vov_cms_settings', d.settings);
-        return d;
+        return {
+          ...d,
+          podcasts,
+          stories,
+          gallery,
+          team,
+          vocabulary,
+          teacherGuide: buildTeacherGuidePayload(),
+        };
       }
     } catch (err) {
       console.warn('Voices of Vehari API unreachable. Rendering with local fallback content.', err?.message || err);
@@ -289,19 +329,25 @@ export const api = {
   getPublicPodcasts: async (params) => {
     try {
       const res = await apiClient.get('/api/public/podcasts', { params, timeout: 3500 });
-      return res.data.data;
+      if (res.data && res.data.data) {
+        return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
+      }
     } catch {
-      return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
   },
 
   getPublicStories: async () => {
     try {
       const res = await apiClient.get('/api/public/stories', { timeout: 3500 });
-      return res.data.data;
+      if (res.data && res.data.data) {
+        return mergeWithLocalCreations(res.data.data, 'vov_cms_stories', 'title');
+      }
     } catch {
-      return getStorageItem('vov_cms_stories', fallbackData.stories);
+      // Fallback below
     }
+    return getStorageItem('vov_cms_stories', fallbackData.stories);
   },
 
   getPublicGallery: async () => {
@@ -529,8 +575,7 @@ export const api = {
     try {
       const res = await apiClient.get('/api/admin/podcasts');
       if (res.data && res.data.data) {
-        setStorageItem('vov_cms_podcasts', res.data.data);
-        return res.data.data;
+        return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
       }
     } catch {
       // fallback below
@@ -552,7 +597,8 @@ export const api = {
       const res = await apiClient.post('/api/admin/podcasts', data);
       if (res.data?.data) {
         const serverPod = res.data.data;
-        const serverUpdated = [serverPod, ...list.filter(p => p.id !== serverPod.id && p.id !== newPod.id)];
+        const currentList = getStorageItem('vov_cms_podcasts', [newPod, ...list]);
+        const serverUpdated = [serverPod, ...currentList.filter(p => p.id !== serverPod.id && p.id !== newPod.id)];
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
       }
@@ -564,14 +610,15 @@ export const api = {
 
   updatePodcast: async (id, data) => {
     const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data, _locallyUpdated: true } : p));
     setStorageItem('vov_cms_podcasts', updated);
     notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/podcasts/${id}`, data);
       if (res.data?.data) {
         const serverPod = res.data.data;
-        const serverUpdated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
+        const currentList = getStorageItem('vov_cms_podcasts', updated);
+        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod, _locallyUpdated: undefined } : p));
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
       }
@@ -596,14 +643,15 @@ export const api = {
 
   togglePodcastPublish: async (id) => {
     const list = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published, _locallyUpdated: true } : p));
     setStorageItem('vov_cms_podcasts', updated);
     notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/podcasts/${id}/toggle-publish`);
       if (res.data?.data) {
         const serverPod = res.data.data;
-        const serverUpdated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
+        const currentList = getStorageItem('vov_cms_podcasts', updated);
+        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod, _locallyUpdated: undefined } : p));
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
       }
@@ -618,8 +666,7 @@ export const api = {
     try {
       const res = await apiClient.get('/api/admin/stories');
       if (res.data && res.data.data) {
-        setStorageItem('vov_cms_stories', res.data.data);
-        return res.data.data;
+        return mergeWithLocalCreations(res.data.data, 'vov_cms_stories', 'title');
       }
     } catch {
       // fallback below
@@ -636,7 +683,8 @@ export const api = {
       const res = await apiClient.post('/api/admin/stories', data);
       if (res.data?.data) {
         const serverStory = res.data.data;
-        const serverUpdated = [serverStory, ...list.filter(s => s.id !== serverStory.id && s.id !== newStory.id)];
+        const currentList = getStorageItem('vov_cms_stories', [newStory, ...list]);
+        const serverUpdated = [serverStory, ...currentList.filter(s => s.id !== serverStory.id && s.id !== newStory.id)];
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
       }
@@ -648,14 +696,15 @@ export const api = {
 
   updateStory: async (id, data) => {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data, _locallyUpdated: true } : s));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
     try {
       const res = await apiClient.put(`/api/admin/stories/${id}`, data);
       if (res.data?.data) {
         const serverStory = res.data.data;
-        const serverUpdated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
+        const currentList = getStorageItem('vov_cms_stories', updated);
+        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory, _locallyUpdated: undefined } : s));
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
       }
@@ -680,14 +729,15 @@ export const api = {
 
   toggleStoryPublish: async (id) => {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published, _locallyUpdated: true } : s));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
     try {
       const res = await apiClient.patch(`/api/admin/stories/${id}/toggle-publish`);
       if (res.data?.data) {
         const serverStory = res.data.data;
-        const serverUpdated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
+        const currentList = getStorageItem('vov_cms_stories', updated);
+        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory, _locallyUpdated: undefined } : s));
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
       }
