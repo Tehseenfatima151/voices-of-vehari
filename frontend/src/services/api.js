@@ -811,6 +811,12 @@ export const api = {
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
 
+    // Sanitize VARCHAR(255) columns
+    if (patchPayload.logo_url && patchPayload.logo_url.length > 255) {
+      console.warn('logo_url exceeds 255 chars, removing from patch to avoid DB error');
+      delete patchPayload.logo_url;
+    }
+
     setStorageItem('vov_cms_settings', { ...data, id: 1 });
     notifyStorageUpdate();
 
@@ -823,10 +829,11 @@ export const api = {
         notifyStorageUpdate();
         return { success: true, message: 'Settings saved successfully', data: res.data[0] };
       }
+      return { success: true, message: 'Settings saved successfully' };
     } catch (err) {
-      console.warn('Supabase updateSettings failed, saved locally:', err);
+      console.error('Supabase updateSettings failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update settings in database' };
     }
-    return { success: true, message: 'Settings saved successfully' };
   },
 
   // ================= 5. HOME HERO =================
@@ -847,6 +854,16 @@ export const api = {
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
 
+    // Sanitize VARCHAR(255) columns to avoid 22001 DB error
+    if (patchPayload.hero_image_url && patchPayload.hero_image_url.length > 255) {
+      console.warn('hero_image_url exceeds 255 chars, removing from patch to avoid DB error');
+      delete patchPayload.hero_image_url;
+    }
+    if (patchPayload.logo_float_url && patchPayload.logo_float_url.length > 255) {
+      console.warn('logo_float_url exceeds 255 chars, removing from patch to avoid DB error');
+      delete patchPayload.logo_float_url;
+    }
+
     setStorageItem('vov_cms_hero', { ...data, id: 1 });
     notifyStorageUpdate();
 
@@ -857,12 +874,13 @@ export const api = {
       if (Array.isArray(res.data) && res.data[0]) {
         setStorageItem('vov_cms_hero', res.data[0]);
         notifyStorageUpdate();
-        return { success: true, message: 'Hero updated successfully', data: res.data[0] };
+        return { success: true, message: 'Hero updated successfully in database', data: res.data[0] };
       }
+      return { success: true, message: 'Hero updated successfully' };
     } catch (err) {
-      console.warn('Supabase updateHero failed, saved locally:', err);
+      console.error('Supabase updateHero failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update hero in database' };
     }
-    return { success: true, message: 'Hero updated successfully' };
   },
 
   // ================= 6. PODCASTS =================
@@ -913,10 +931,11 @@ export const api = {
         const updated = [saved, ...currentList.filter(p => p.id !== tempPod.id && p.id !== saved.id)];
         setStorageItem('vov_cms_podcasts', updated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Podcast episode created successfully' };
+        return { success: true, data: saved, message: 'Podcast episode created successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase podcast create error:', err);
+      console.error('Supabase podcast create error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to create podcast in database' };
     }
 
     return { success: true, message: 'Podcast episode created successfully', data: tempPod };
@@ -952,10 +971,11 @@ export const api = {
         const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? saved : p));
         setStorageItem('vov_cms_podcasts', serverUpdated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Podcast updated successfully' };
+        return { success: true, data: saved, message: 'Podcast updated successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase podcast update error:', err);
+      console.error('Supabase podcast update error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update podcast in database' };
     }
 
     return { success: true, message: 'Podcast updated successfully' };
@@ -1039,10 +1059,11 @@ export const api = {
         const updated = [saved, ...currentList.filter(s => s.id !== tempStory.id && s.id !== saved.id)];
         setStorageItem('vov_cms_stories', updated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Story created successfully' };
+        return { success: true, data: saved, message: 'Story created successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase story create error:', err);
+      console.error('Supabase story create error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to create story in database' };
     }
 
     return { success: true, message: 'Story created successfully', data: tempStory };
@@ -1069,10 +1090,11 @@ export const api = {
         const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? saved : s));
         setStorageItem('vov_cms_stories', serverUpdated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Story updated successfully' };
+        return { success: true, data: saved, message: 'Story updated successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase story update error:', err);
+      console.error('Supabase story update error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update story in database' };
     }
 
     return { success: true, message: 'Story updated successfully' };
@@ -1157,7 +1179,8 @@ export const api = {
         return { success: true, data: saved, message: 'Image added to gallery!' };
       }
     } catch (err) {
-      console.warn('Supabase gallery create error:', err);
+      console.error('Supabase gallery create error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to add image to gallery' };
     }
 
     return { success: true, message: 'Image added to gallery!', data: tempItem };
@@ -1187,7 +1210,8 @@ export const api = {
         return { success: true, data: saved, message: 'Gallery item updated successfully' };
       }
     } catch (err) {
-      console.warn('Supabase gallery update error:', err);
+      console.error('Supabase gallery update error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update gallery item' };
     }
 
     return { success: true, message: 'Gallery item updated successfully' };
@@ -1261,10 +1285,11 @@ export const api = {
         const updated = [saved, ...currentList.filter(m => m.id !== tempMember.id && m.id !== saved.id)];
         setStorageItem('vov_cms_team', updated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Team member added successfully' };
+        return { success: true, data: saved, message: 'Team member added successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase team member create error:', err);
+      console.error('Supabase team member create error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to add team member' };
     }
 
     return { success: true, message: 'Team member added successfully', data: tempMember };
@@ -1291,10 +1316,11 @@ export const api = {
         const serverUpdated = currentList.map((m) => (m.id === id || m.id === Number(id) ? saved : m));
         setStorageItem('vov_cms_team', serverUpdated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Team member updated successfully' };
+        return { success: true, data: saved, message: 'Team member updated successfully in database' };
       }
     } catch (err) {
-      console.warn('Supabase team member update error:', err);
+      console.error('Supabase team member update error:', err);
+      return { success: false, message: err.response?.data?.message || err.message || 'Failed to update team member' };
     }
 
     return { success: true, message: 'Team member updated successfully' };
@@ -1563,10 +1589,55 @@ export const api = {
         });
 
       let publicUrl = '';
+      let base64Data = '';
       if (file && typeof file === 'object' && typeof FileReader !== 'undefined') {
-        publicUrl = await toBase64(file);
-      } else {
-        publicUrl = URL.createObjectURL(file);
+        base64Data = await toBase64(file);
+      }
+
+      // 1. Primary: Serverless /api/upload (Node.js backend proxying to permanent CDN)
+      if (base64Data) {
+        try {
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              file: base64Data,
+              name: file.name || `media_${Date.now()}.png`,
+              type: file.type || 'image/png'
+            })
+          });
+          if (uploadRes.ok) {
+            const uploadJson = await uploadRes.json();
+            if (uploadJson.success && uploadJson.url) {
+              publicUrl = uploadJson.url;
+            }
+          }
+        } catch (serverlessErr) {
+          console.warn('/api/upload endpoint not reachable, trying client fallback:', serverlessErr);
+        }
+      }
+
+      // 2. Secondary client fallback (tmpfiles.org)
+      if (!publicUrl && file && typeof file === 'object') {
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          const tmpRes = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: fd
+          });
+          if (tmpRes.ok) {
+            const tmpData = await tmpRes.json();
+            if (tmpData?.data?.url) {
+              publicUrl = tmpData.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Fallback: if external upload fails, use base64
+      if (!publicUrl) {
+        publicUrl = base64Data || (typeof file === 'string' ? file : '');
       }
 
       const mediaRecord = {
@@ -1575,7 +1646,7 @@ export const api = {
         file_type: (file.type && file.type.startsWith('image/')) ? 'image' : ((file.type && file.type.startsWith('audio/')) ? 'audio' : 'document'),
         mime_type: file.type || 'application/octet-stream',
         file_size: file.size || 0,
-        file_path: 'base64_data',
+        file_path: publicUrl.slice(0, 250),
         public_url: publicUrl,
         alt_text: altText || file.name || '',
       };

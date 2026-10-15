@@ -11,7 +11,8 @@ import {
   formatAudioUrl,
   getVideoEmbedUrl,
   isYouTubeUrl,
-  isGoogleDriveUrl
+  isGoogleDriveUrl,
+  extractGoogleDriveId
 } from '../utils/mediaUrlHelper';
 
 const getInitialSiteData = () => {
@@ -322,13 +323,31 @@ export const PublicWebsite = () => {
                 <img
                   src={formatImageUrl(hero.hero_image_url) || '/assets/hero_art.jpeg'}
                   alt={hero.hero_image_alt || 'Illustration of young people creating podcasts and sharing stories'}
-                  onError={(e) => { e.target.src = '/assets/hero_art.jpeg'; }}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const driveId = extractGoogleDriveId(hero.hero_image_url);
+                    if (driveId && !e.target.dataset.triedFallback) {
+                      e.target.dataset.triedFallback = 'true';
+                      e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`;
+                      return;
+                    }
+                    e.target.src = '/assets/hero_art.jpeg';
+                  }}
                 />
                 <div className="logo-float">
                   <img
                     src={formatImageUrl(hero.logo_float_url) || '/assets/voices_logo.png'}
                     alt="Voices of Vehari"
-                    onError={(e) => { e.target.src = '/assets/voices_logo.png'; }}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const driveId = extractGoogleDriveId(hero.logo_float_url);
+                      if (driveId && !e.target.dataset.triedFallback) {
+                        e.target.dataset.triedFallback = 'true';
+                        e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w600`;
+                        return;
+                      }
+                      e.target.src = '/assets/voices_logo.png';
+                    }}
                   />
                 </div>
               </div>
@@ -666,7 +685,16 @@ export const PublicWebsite = () => {
                       <img
                         src={formatImageUrl(pod.cover_image_url) || '/assets/podcast_upcoming.jpeg'}
                         alt={pod.title}
-                        onError={(e) => { e.target.src = '/assets/podcast_upcoming.jpeg'; }}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(pod.cover_image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+                            return;
+                          }
+                          e.target.src = '/assets/podcast_upcoming.jpeg';
+                        }}
                       />
                       {pod.video_url && (
                         <div
@@ -794,8 +822,17 @@ export const PublicWebsite = () => {
                       <img
                         src={formatImageUrl(st.image_url)}
                         alt={st.title}
+                        referrerPolicy="no-referrer"
                         style={{ width: '100%', height: '170px', objectFit: 'cover', borderRadius: '12px', marginBottom: '14px' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(st.image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+                            return;
+                          }
+                          e.target.style.display = 'none';
+                        }}
                       />
                     )}
                     <span className="tag">{st.category_tag || 'Folklore'}</span>
@@ -1368,7 +1405,16 @@ export const PublicWebsite = () => {
                     src={formatImageUrl(g.image_url) || '/assets/gallery_poster.jpeg'}
                     alt={g.alt_text || g.title}
                     title={g.caption || g.title}
-                    onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const driveId = extractGoogleDriveId(g.image_url);
+                      if (driveId && !e.target.dataset.triedFallback) {
+                        e.target.dataset.triedFallback = 'true';
+                        e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+                        return;
+                      }
+                      e.target.src = '/assets/gallery_poster.jpeg';
+                    }}
                   />
                 ))}
               </div>
@@ -1411,8 +1457,17 @@ export const PublicWebsite = () => {
                         src={formatImageUrl(m.image_url)}
                         alt={m.name}
                         className="avatar"
+                        referrerPolicy="no-referrer"
                         style={{ objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(m.image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+                            return;
+                          }
+                          e.target.style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="avatar">{m.initials || 'IS'}</div>
@@ -1440,8 +1495,17 @@ export const PublicWebsite = () => {
                         src={formatImageUrl(m.image_url)}
                         alt={m.name}
                         className="avatar"
+                        referrerPolicy="no-referrer"
                         style={{ objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(m.image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+                            return;
+                          }
+                          e.target.style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="avatar">{m.initials || 'MS'}</div>
@@ -1469,8 +1533,17 @@ export const PublicWebsite = () => {
                         src={formatImageUrl(m.image_url)}
                         alt={m.name}
                         className="avatar"
+                        referrerPolicy="no-referrer"
                         style={{ objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(m.image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+                            return;
+                          }
+                          e.target.style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="avatar">{m.initials || 'ST'}</div>
@@ -1498,8 +1571,17 @@ export const PublicWebsite = () => {
                         src={formatImageUrl(m.image_url)}
                         alt={m.name}
                         className="avatar"
+                        referrerPolicy="no-referrer"
                         style={{ objectFit: 'cover' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
+                        onError={(e) => {
+                          const driveId = extractGoogleDriveId(m.image_url);
+                          if (driveId && !e.target.dataset.triedFallback) {
+                            e.target.dataset.triedFallback = 'true';
+                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+                            return;
+                          }
+                          e.target.style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="avatar">{m.initials || 'FC'}</div>

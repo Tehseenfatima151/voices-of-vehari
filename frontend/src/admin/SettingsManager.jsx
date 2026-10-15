@@ -70,10 +70,14 @@ export const SettingsManager = () => {
         ...settings,
         logo_url: formatImageUrl(settings.logo_url),
       };
-      await api.updateSettings(payload);
-      addToast('Site settings updated successfully! View the public site to see changes.', 'success');
-    } catch {
-      addToast('Failed to save settings', 'error');
+      const res = await api.updateSettings(payload);
+      if (res && res.success) {
+        addToast('Site settings updated successfully! View the public site to see changes.', 'success');
+      } else {
+        addToast(res?.message || 'Failed to save settings to database', 'error');
+      }
+    } catch (err) {
+      addToast(err?.message || 'Failed to save settings', 'error');
     } finally {
       setSaving(false);
     }

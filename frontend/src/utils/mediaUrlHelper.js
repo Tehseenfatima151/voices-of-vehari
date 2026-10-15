@@ -14,6 +14,11 @@ export const extractGoogleDriveId = (url) => {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
 
+  // Raw Google Drive ID (typically 25-45 chars of base64url characters)
+  if (/^[a-zA-Z0-9_-]{25,45}$/.test(trimmed)) {
+    return trimmed;
+  }
+
   // /file/d/FILE_ID or /d/FILE_ID
   const matchD = trimmed.match(/\/(?:file\/)?d\/([a-zA-Z0-9_-]+)/);
   if (matchD && matchD[1]) return matchD[1];
@@ -26,21 +31,32 @@ export const extractGoogleDriveId = (url) => {
 };
 
 /**
- * Checks if a given URL is a Google Drive link.
+ * Checks if a given URL is a Google Drive link or ID.
  */
 export const isGoogleDriveUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
-  return /drive\.google\.com|googleusercontent\.com/.test(url);
+  return /drive\.google\.com|googleusercontent\.com/.test(url) || !!extractGoogleDriveId(url);
 };
 
 /**
  * Converts a Google Drive share link to direct viewable image stream URL.
- * https://lh3.googleusercontent.com/d/FILE_ID serves public Drive images without CORS issues.
+ * https://lh3.googleusercontent.com/d/FILE_ID serves public Drive images directly.
  */
 export const getGoogleDriveImageUrl = (url) => {
   const fileId = extractGoogleDriveId(url);
   if (fileId) {
     return `https://lh3.googleusercontent.com/d/${fileId}`;
+  }
+  return url;
+};
+
+/**
+ * Converts a Google Drive link to thumbnail image URL.
+ */
+export const getGoogleDriveThumbnailUrl = (url, size = 1200) => {
+  const fileId = extractGoogleDriveId(url);
+  if (fileId) {
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
   }
   return url;
 };

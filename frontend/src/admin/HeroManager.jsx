@@ -79,9 +79,11 @@ export const HeroManager = () => {
       const res = await api.updateHero(payload);
       if (res.success) {
         addToast('Hero section updated successfully! View the public site to see changes.', 'success');
+      } else {
+        addToast(res.message || 'Failed to update hero section in database', 'error');
       }
     } catch (err) {
-      addToast('Error saving hero section', 'error');
+      addToast(err.message || 'Error saving hero section', 'error');
     } finally {
       setSaving(false);
     }
@@ -232,6 +234,7 @@ export const HeroManager = () => {
                 <img
                   src={formatImageUrl(hero.hero_image_url)}
                   alt="Preview"
+                  referrerPolicy="no-referrer"
                   style={{ width: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '12px', border: '1px solid var(--line)' }}
                   onError={(e) => { e.target.src = '/assets/hero_art.jpeg'; }}
                 />
@@ -274,6 +277,7 @@ export const HeroManager = () => {
                 <img
                   src={formatImageUrl(hero.logo_float_url)}
                   alt="Preview"
+                  referrerPolicy="no-referrer"
                   style={{ maxHeight: '80px', background: 'white', padding: '8px', borderRadius: '12px', border: '1px solid var(--line)' }}
                   onError={(e) => { e.target.src = '/assets/voices_logo.png'; }}
                 />

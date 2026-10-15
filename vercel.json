@@ -2,11 +2,18 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "functions": {
+    "api/upload.js": {
+      "maxDuration": 30
+    },
     "api/index.py": {
       "includeFiles": "backend/**"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/upload",
+      "destination": "/api/upload.js"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.py"
