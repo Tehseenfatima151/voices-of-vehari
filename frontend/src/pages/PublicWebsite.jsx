@@ -121,6 +121,15 @@ export const PublicWebsite = () => {
 
   const tg = teacherGuide || fallbackData.teacherGuide;
 
+  const effectiveTeamByRole = (team_by_role && (team_by_role.leadership || team_by_role.mentor || team_by_role.student || team_by_role.contributor))
+    ? team_by_role
+    : {
+        leadership: team.filter((m) => m.role_category === 'leadership' && m.is_active !== false),
+        mentor: team.filter((m) => m.role_category === 'mentor' && m.is_active !== false),
+        student: team.filter((m) => m.role_category === 'student' && m.is_active !== false),
+        contributor: team.filter((m) => m.role_category === 'contributor' && m.is_active !== false),
+      };
+
   useEffect(() => {
     let isMounted = true;
     const fetchContent = async () => {
@@ -1395,7 +1404,7 @@ export const PublicWebsite = () => {
               <span className="eyebrow">Project leadership</span>
               <h2>Leadership</h2>
               <div className="team-grid" style={{ marginTop: '22px' }}>
-                {(team_by_role.leadership || []).map((m) => (
+                {(effectiveTeamByRole.leadership || []).map((m) => (
                   <div key={m.id} className="person">
                     {m.image_url ? (
                       <img
@@ -1424,7 +1433,7 @@ export const PublicWebsite = () => {
               <span className="eyebrow">Mentors</span>
               <h2>Mentors</h2>
               <div className="team-grid" style={{ marginTop: '22px' }}>
-                {(team_by_role.mentor || []).map((m) => (
+                {(effectiveTeamByRole.mentor || []).map((m) => (
                   <div key={m.id} className="person">
                     {m.image_url ? (
                       <img
@@ -1453,7 +1462,7 @@ export const PublicWebsite = () => {
               <span className="eyebrow">Student team</span>
               <h2>Student contributors</h2>
               <div className="team-grid" style={{ marginTop: '22px' }}>
-                {(team_by_role.student || []).map((m) => (
+                {(effectiveTeamByRole.student || []).map((m) => (
                   <div key={m.id} className="person">
                     {m.image_url ? (
                       <img
@@ -1482,7 +1491,7 @@ export const PublicWebsite = () => {
               <span className="eyebrow">Featured contributors</span>
               <h2>Podcast & media contributors</h2>
               <div className="team-grid" style={{ marginTop: '22px' }}>
-                {(team_by_role.contributor || []).map((m) => (
+                {(effectiveTeamByRole.contributor || []).map((m) => (
                   <div key={m.id} className="person">
                     {m.image_url ? (
                       <img

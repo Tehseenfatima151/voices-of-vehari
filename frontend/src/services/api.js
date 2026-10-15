@@ -18,7 +18,7 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_h
 
 const supabaseClient = axios.create({
   baseURL: `${SUPABASE_URL}/rest/v1`,
-  timeout: 7000,
+  timeout: 10000,
   headers: {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
@@ -36,6 +36,7 @@ const slugify = (text = '') => {
     .replace(/--+/g, '-');
 };
 
+// ================= SCHEMA MAPPERS FOR SUPABASE =================
 const mapPodcastFromSupabase = (pod) => {
   let tags = [];
   if (pod.tags_json) {
@@ -66,6 +67,168 @@ const mapStoryFromSupabase = (st) => ({
   sort_order: Number(st.sort_order) || 0,
 });
 
+const mapGalleryFromSupabase = (g) => ({
+  ...g,
+  is_published: g.is_published ?? true,
+  sort_order: Number(g.sort_order) || 0,
+});
+
+const mapTeamMemberFromSupabase = (m) => ({
+  ...m,
+  is_active: m.is_active ?? true,
+  sort_order: Number(m.sort_order) || 0,
+});
+
+const mapCardFromSupabase = (c) => {
+  let bullets = [];
+  if (c.bullets_json) {
+    try {
+      bullets = typeof c.bullets_json === 'string' ? JSON.parse(c.bullets_json) : c.bullets_json;
+    } catch {
+      bullets = [];
+    }
+  } else if (Array.isArray(c.bullets)) {
+    bullets = c.bullets;
+  }
+  return {
+    ...c,
+    bullets,
+    is_active: c.is_active ?? true,
+    sort_order: Number(c.sort_order) || 0,
+  };
+};
+
+const mapTimelineFromSupabase = (t) => {
+  let paragraphs = [];
+  if (t.paragraphs_json) {
+    try {
+      paragraphs = typeof t.paragraphs_json === 'string' ? JSON.parse(t.paragraphs_json) : t.paragraphs_json;
+    } catch {
+      paragraphs = [];
+    }
+  } else if (Array.isArray(t.paragraphs)) {
+    paragraphs = t.paragraphs;
+  }
+  return {
+    ...t,
+    paragraphs,
+    phase_number: Number(t.phase_number) || 1,
+    is_active: t.is_active ?? true,
+    sort_order: Number(t.sort_order) || 0,
+  };
+};
+
+const mapArticleFromSupabase = (a) => {
+  let materials = [];
+  if (a.materials_json) {
+    try {
+      materials = typeof a.materials_json === 'string' ? JSON.parse(a.materials_json) : a.materials_json;
+    } catch {
+      materials = [];
+    }
+  } else if (Array.isArray(a.materials)) {
+    materials = a.materials;
+  }
+
+  let steps = [];
+  if (a.steps_json) {
+    try {
+      steps = typeof a.steps_json === 'string' ? JSON.parse(a.steps_json) : a.steps_json;
+    } catch {
+      steps = [];
+    }
+  } else if (Array.isArray(a.steps)) {
+    steps = a.steps;
+  }
+
+  return {
+    ...a,
+    materials,
+    steps,
+    short_description: a.short_description || '',
+    excerpt: a.short_description || '',
+    estimated_time: a.estimated_time || '30–45 minutes',
+    time: a.estimated_time || '30–45 minutes',
+    display_order: Number(a.display_order) || 0,
+    is_published: a.is_published ?? true,
+    details: {
+      objective: a.content || a.short_description || '',
+      materials,
+      steps,
+    },
+  };
+};
+
+const mapActivityFromSupabase = (act) => {
+  let objectives = [];
+  if (act.objectives_json) {
+    try {
+      objectives = typeof act.objectives_json === 'string' ? JSON.parse(act.objectives_json) : act.objectives_json;
+    } catch {
+      objectives = [];
+    }
+  } else if (Array.isArray(act.objectives)) {
+    objectives = act.objectives;
+  }
+
+  let steps = [];
+  if (act.steps_json) {
+    try {
+      steps = typeof act.steps_json === 'string' ? JSON.parse(act.steps_json) : act.steps_json;
+    } catch {
+      steps = [];
+    }
+  } else if (Array.isArray(act.steps)) {
+    steps = act.steps;
+  }
+
+  return {
+    ...act,
+    objectives,
+    steps,
+    teacher_tip: act.teacher_tip || '',
+    teacherTip: act.teacher_tip || '',
+    estimated_time: act.estimated_time || '35 minutes',
+    time: act.estimated_time || '35 minutes',
+    is_published: act.is_published ?? true,
+  };
+};
+
+const mapStrategyFromSupabase = (s) => ({
+  ...s,
+  num: s.strategy_number || (s.display_order ? String(s.display_order).padStart(2, '0') : '01'),
+  strategy_number: s.strategy_number || (s.display_order ? String(s.display_order).padStart(2, '0') : '01'),
+  display_order: Number(s.display_order) || 0,
+  is_published: s.is_published ?? true,
+});
+
+const mapPromptFromSupabase = (p) => ({
+  ...p,
+  prompt: (p.prompt || '').trim().replace(/^["'\s]+|["'\s]+$/g, ''),
+  category: p.category || 'General',
+  display_order: Number(p.display_order) || 0,
+  is_published: p.is_published ?? true,
+});
+
+const mapLessonPlanFromSupabase = (lp) => {
+  if (!lp) return fallbackData.teacherGuide?.lessonPlanTemplate;
+  const fields = [
+    { label: 'Topic', placeholder: lp.topic || 'e.g. Local Harvests & Markets in Vehari' },
+    { label: 'Learning Objective', placeholder: lp.learning_objective || 'e.g. By the end of class, students will be able to describe a market scene...' },
+    { label: 'English Skills', placeholder: lp.english_skills || 'Speaking, Vocabulary, Listening, Reading' },
+    { label: 'Vocabulary', placeholder: lp.vocabulary || 'e.g. stall, vendor, barter, fresh, bustling, fragrant' },
+    { label: 'Warm-up Activity', placeholder: lp.warmup_activity || '5-minute photo prompt & partner brainstorming' },
+    { label: 'Main Activity', placeholder: lp.main_activity || 'Contextual reading or listening from Voices of Vehari story archive' },
+    { label: 'Pair/Group Activity', placeholder: lp.pair_group_activity || 'Role-play interview between local vendor and customer' },
+    { label: 'Assessment', placeholder: lp.assessment || 'Formative observation of peer interaction' },
+    { label: 'Homework / Follow-up', placeholder: lp.homework || 'Write a 4-sentence reflection on their favorite family custom' },
+  ];
+  return {
+    ...lp,
+    fields,
+  };
+};
+
 // Storage helper functions for offline/demo resilience
 const getStorageItem = (key, defaultVal) => {
   try {
@@ -82,39 +245,13 @@ const setStorageItem = (key, val) => {
   } catch (_) {}
 };
 
-// Merge server list with local custom additions (identified by timestamp id or not in server)
-// so that user-created podcasts/stories are NEVER wiped out by server responses
-const mergeWithLocalCreations = (serverList = [], storageKey, uniqueField = 'title') => {
-  const localList = getStorageItem(storageKey, []);
-  if (!Array.isArray(localList) || localList.length === 0) {
-    setStorageItem(storageKey, serverList);
-    return serverList;
-  }
-  // Find local items that were created client-side or updated
-  const localAdditions = localList.filter((item) => {
-    const isLocalId = typeof item.id === 'number' && item.id > 1000000000;
-    const existsOnServer = serverList.some(
-      (srv) => srv.id === item.id || (item[uniqueField] && srv[uniqueField] === item[uniqueField])
-    );
-    return isLocalId && !existsOnServer;
-  });
-
-  // Also preserve any local edits if an item was updated while offline
-  const merged = serverList.map((srvItem) => {
-    const localMatch = localList.find((l) => l.id === srvItem.id);
-    if (localMatch && localMatch._locallyUpdated) {
-      return { ...srvItem, ...localMatch, _locallyUpdated: undefined };
-    }
-    return srvItem;
-  });
-
-  const finalList = [...localAdditions, ...merged];
-  setStorageItem(storageKey, finalList);
-  return finalList;
+const notifyStorageUpdate = () => {
+  try {
+    window.dispatchEvent(new Event('storage'));
+  } catch (_) {}
 };
 
-
-// Teacher Guide offline/demo resilience helpers
+// Fallback initial structures
 const getInitialArticles = () => (fallbackData.teacherGuide?.resources || []).map((a, i) => ({
   ...a,
   id: a.id || i + 1,
@@ -186,41 +323,29 @@ const getInitialLessonPlan = () => ({
   homework: fallbackData.teacherGuide?.lessonPlanTemplate?.homework || 'Write a 4-sentence reflection on favorite family custom',
 });
 
-const buildTeacherGuidePayload = () => {
-  const rawArticles = getStorageItem('vov_cms_tg_articles', getInitialArticles());
+const buildTeacherGuidePayload = (articles, activities, strategies, prompts, lessonPlan) => {
+  const rawArticles = articles || getStorageItem('vov_cms_tg_articles', getInitialArticles());
   const tgArticles = rawArticles
     .filter((a) => a.is_published !== false)
     .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
 
-  const rawActivities = getStorageItem('vov_cms_tg_activities', getInitialActivities());
+  const rawActivities = activities || getStorageItem('vov_cms_tg_activities', getInitialActivities());
   const publishedActivities = rawActivities.filter((a) => a.is_published !== false);
   const tgFeaturedActivity = publishedActivities.length > 0
     ? publishedActivities[0]
     : (fallbackData.teacherGuide?.featuredActivity || null);
 
-  const rawStrategies = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
+  const rawStrategies = strategies || getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
   const tgStrategies = rawStrategies
     .filter((s) => s.is_published !== false)
     .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
 
-  let rawPrompts = getStorageItem('vov_cms_tg_prompts', null);
-  if (!rawPrompts || rawPrompts.length <= 1) {
-    const initial = getInitialPrompts();
-    const combined = rawPrompts ? [...rawPrompts] : [];
-    initial.forEach((initItem) => {
-      const already = combined.some(c => (c.prompt || '').toLowerCase().includes(initItem.prompt.toLowerCase().slice(0, 25)));
-      if (!already) {
-        combined.push(initItem);
-      }
-    });
-    setStorageItem('vov_cms_tg_prompts', combined);
-    rawPrompts = combined;
-  }
+  const rawPrompts = prompts || getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
   const tgPrompts = rawPrompts
     .filter((p) => p.is_published !== false)
     .sort((a, b) => (Number(a.display_order) || 0) - (Number(b.display_order) || 0));
 
-  const rawLessonPlan = getStorageItem('vov_cms_tg_lessonplan', getInitialLessonPlan());
+  const rawLessonPlan = lessonPlan || getStorageItem('vov_cms_tg_lessonplan', getInitialLessonPlan());
   const lpFields = [
     { label: 'Topic', placeholder: rawLessonPlan.topic || 'e.g. Local Harvests & Markets in Vehari' },
     { label: 'Learning Objective', placeholder: rawLessonPlan.learning_objective || 'e.g. By the end of class, students will be able to describe a market scene...' },
@@ -254,72 +379,7 @@ const buildTeacherGuidePayload = () => {
   };
 };
 
-const notifyStorageUpdate = () => {
-  try {
-    window.dispatchEvent(new Event('storage'));
-  } catch (_) {}
-};
-
-// Helper to acquire a real JWT token from backend if currently using a local fallback mock token
-const ensureRealJwtToken = async () => {
-  try {
-    const res = await axios.post((API_URL || '') + '/api/auth/login', {
-      username: 'admin',
-      password: 'AdminPassword2026!'
-    }, { timeout: 3000 });
-    if (res.data?.token) {
-      localStorage.setItem('vov_admin_token', res.data.token);
-      if (res.data.user) {
-        localStorage.setItem('vov_admin_user', JSON.stringify(res.data.user));
-      }
-      return res.data.token;
-    }
-  } catch (_) {}
-  return null;
-};
-
-// Request interceptor: attach JWT token, upgrading mock token to real backend JWT if live
-apiClient.interceptors.request.use(
-  async (config) => {
-    let token = localStorage.getItem('vov_admin_token');
-    if (token && token.startsWith('vov_admin_authenticated_session_') && config.url?.startsWith('/api/admin')) {
-      const realToken = await ensureRealJwtToken();
-      if (realToken) {
-        token = realToken;
-      }
-    }
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor: handle 401 by attempting auto-token recovery before failing
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry &&
-      originalRequest.url?.startsWith('/api/admin')
-    ) {
-      originalRequest._retry = true;
-      const newToken = await ensureRealJwtToken();
-      if (newToken) {
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return apiClient(originalRequest);
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const api = {
-  // Check whether backend is live
   checkBackendHealth: async () => {
     try {
       const res = await apiClient.get('/health', { timeout: 2500 });
@@ -329,114 +389,212 @@ export const api = {
     }
   },
 
-  // ================= PUBLIC ENDPOINTS (DIRECT SUPABASE + FALLBACK) =================
+  // ================= 1. PUBLIC ENDPOINTS (DIRECT REAL-TIME SUPABASE) =================
   getPublicAll: async () => {
     try {
-      const [podRes, storyRes, vocabRes, galleryRes, teamRes] = await Promise.allSettled([
+      const [
+        settingsRes,
+        heroRes,
+        podRes,
+        storyRes,
+        vocabRes,
+        galleryRes,
+        teamRes,
+        cardsRes,
+        statsRes,
+        timelineRes,
+        refsRes,
+        tgArticlesRes,
+        tgActivitiesRes,
+        tgStrategiesRes,
+        tgPromptsRes,
+        tgLessonPlanRes
+      ] = await Promise.allSettled([
+        supabaseClient.get('/site_settings?select=*&limit=1'),
+        supabaseClient.get('/hero_sections?select=*&limit=1'),
         supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc'),
         supabaseClient.get('/stories?select=*&order=sort_order.asc,created_at.desc'),
         supabaseClient.get('/vocabulary_words?select=*&order=display_order.asc,id.asc'),
         supabaseClient.get('/gallery_items?select=*&order=sort_order.asc,created_at.desc'),
-        supabaseClient.get('/team_members?select=*&order=sort_order.asc'),
+        supabaseClient.get('/team_members?select=*&order=sort_order.asc,id.asc'),
+        supabaseClient.get('/section_cards?select=*&order=sort_order.asc,id.asc'),
+        supabaseClient.get('/statistics?select=*&order=sort_order.asc,id.asc'),
+        supabaseClient.get('/timeline_items?select=*&order=sort_order.asc,phase_number.asc'),
+        supabaseClient.get('/academic_references?select=*&order=sort_order.asc,id.asc'),
+        supabaseClient.get('/teacher_guide_articles?select=*&order=display_order.asc,id.asc'),
+        supabaseClient.get('/teacher_guide_activities?select=*&order=id.asc'),
+        supabaseClient.get('/teacher_guide_strategies?select=*&order=display_order.asc,id.asc'),
+        supabaseClient.get('/teacher_guide_prompts?select=*&order=display_order.asc,id.asc'),
+        supabaseClient.get('/teacher_guide_lesson_plans?select=*&limit=1'),
       ]);
 
-      let podcasts = null;
+      // Settings
+      let settings = getStorageItem('vov_cms_settings', fallbackData.settings);
+      if (settingsRes.status === 'fulfilled' && Array.isArray(settingsRes.value.data) && settingsRes.value.data[0]) {
+        settings = settingsRes.value.data[0];
+        setStorageItem('vov_cms_settings', settings);
+      }
+
+      // Hero
+      let hero = getStorageItem('vov_cms_hero', fallbackData.hero);
+      if (heroRes.status === 'fulfilled' && Array.isArray(heroRes.value.data) && heroRes.value.data[0]) {
+        hero = heroRes.value.data[0];
+        setStorageItem('vov_cms_hero', hero);
+      }
+
+      // Podcasts
+      let podcasts = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
       if (podRes.status === 'fulfilled' && Array.isArray(podRes.value.data) && podRes.value.data.length > 0) {
         podcasts = podRes.value.data.map(mapPodcastFromSupabase);
         setStorageItem('vov_cms_podcasts', podcasts);
       }
 
-      let stories = null;
+      // Stories
+      let stories = getStorageItem('vov_cms_stories', fallbackData.stories);
       if (storyRes.status === 'fulfilled' && Array.isArray(storyRes.value.data) && storyRes.value.data.length > 0) {
         stories = storyRes.value.data.map(mapStoryFromSupabase);
         setStorageItem('vov_cms_stories', stories);
       }
 
-      let vocabulary = null;
+      // Vocabulary
+      let vocabulary = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
       if (vocabRes.status === 'fulfilled' && Array.isArray(vocabRes.value.data) && vocabRes.value.data.length > 0) {
         vocabulary = vocabRes.value.data;
         setStorageItem('vov_cms_vocabulary', vocabulary);
       }
 
-      let gallery = null;
+      // Gallery
+      let gallery = getStorageItem('vov_cms_gallery', fallbackData.gallery);
       if (galleryRes.status === 'fulfilled' && Array.isArray(galleryRes.value.data) && galleryRes.value.data.length > 0) {
-        gallery = galleryRes.value.data;
+        gallery = galleryRes.value.data.map(mapGalleryFromSupabase);
         setStorageItem('vov_cms_gallery', gallery);
       }
 
-      let team = null;
+      // Team
+      let team = getStorageItem('vov_cms_team', fallbackData.team);
       if (teamRes.status === 'fulfilled' && Array.isArray(teamRes.value.data) && teamRes.value.data.length > 0) {
-        team = teamRes.value.data;
+        team = teamRes.value.data.map(mapTeamMemberFromSupabase);
         setStorageItem('vov_cms_team', team);
       }
 
-      if (podcasts || stories) {
-        return {
-          ...fallbackData,
-          settings: getStorageItem('vov_cms_settings', fallbackData.settings),
-          hero: getStorageItem('vov_cms_hero', fallbackData.hero),
-          podcasts: podcasts || getStorageItem('vov_cms_podcasts', fallbackData.podcasts),
-          stories: stories || getStorageItem('vov_cms_stories', fallbackData.stories),
-          gallery: gallery || getStorageItem('vov_cms_gallery', fallbackData.gallery),
-          team: team || getStorageItem('vov_cms_team', fallbackData.team),
-          teacherGuide: buildTeacherGuidePayload(),
-          vocabulary: vocabulary || getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
-        };
-      }
-    } catch (err) {
-      console.warn('Supabase getPublicAll failed, falling back:', err?.message || err);
-    }
+      // Team By Role
+      const team_by_role = {
+        leadership: team.filter((m) => m.role_category === 'leadership' && m.is_active !== false),
+        mentor: team.filter((m) => m.role_category === 'mentor' && m.is_active !== false),
+        student: team.filter((m) => m.role_category === 'student' && m.is_active !== false),
+        contributor: team.filter((m) => m.role_category === 'contributor' && m.is_active !== false),
+      };
 
-    try {
-      const res = await apiClient.get('/api/public/all', { timeout: 3500 });
-      if (res.data && res.data.data) {
-        const d = res.data.data;
-        const podcasts = d.podcasts ? mergeWithLocalCreations(d.podcasts, 'vov_cms_podcasts', 'title') : getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
-        const stories = d.stories ? mergeWithLocalCreations(d.stories, 'vov_cms_stories', 'title') : getStorageItem('vov_cms_stories', fallbackData.stories);
-        const gallery = d.gallery ? mergeWithLocalCreations(d.gallery, 'vov_cms_gallery', 'title') : getStorageItem('vov_cms_gallery', fallbackData.gallery);
-        const team = d.team ? mergeWithLocalCreations(d.team, 'vov_cms_team', 'name') : getStorageItem('vov_cms_team', fallbackData.team);
-        const vocabulary = d.vocabulary ? mergeWithLocalCreations(d.vocabulary, 'vov_cms_vocabulary', 'word') : getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
-        if (d.hero) setStorageItem('vov_cms_hero', d.hero);
-        if (d.settings) setStorageItem('vov_cms_settings', d.settings);
-        return {
-          ...d,
-          podcasts,
-          stories,
-          gallery,
-          team,
-          vocabulary,
-          teacherGuide: buildTeacherGuidePayload(),
-        };
+      // Content Cards grouped by section_group
+      let cards = getStorageItem('vov_cms_cards', fallbackData.cards);
+      if (cardsRes.status === 'fulfilled' && Array.isArray(cardsRes.value.data) && cardsRes.value.data.length > 0) {
+        const grouped = {};
+        cardsRes.value.data.forEach((c) => {
+          const grp = c.section_group || 'home_idea';
+          if (!grouped[grp]) grouped[grp] = [];
+          grouped[grp].push(mapCardFromSupabase(c));
+        });
+        cards = { ...fallbackData.cards, ...grouped };
+        setStorageItem('vov_cms_cards', cards);
       }
+
+      // Statistics
+      let statistics = getStorageItem('vov_cms_statistics', fallbackData.statistics);
+      if (statsRes.status === 'fulfilled' && Array.isArray(statsRes.value.data) && statsRes.value.data.length > 0) {
+        statistics = statsRes.value.data;
+        setStorageItem('vov_cms_statistics', statistics);
+      }
+
+      // Timeline / Methodology
+      let timeline = getStorageItem('vov_cms_timeline', fallbackData.timeline);
+      if (timelineRes.status === 'fulfilled' && Array.isArray(timelineRes.value.data) && timelineRes.value.data.length > 0) {
+        timeline = timelineRes.value.data.map(mapTimelineFromSupabase);
+        setStorageItem('vov_cms_timeline', timeline);
+      }
+
+      // Academic References
+      let references = fallbackData.references || [];
+      if (refsRes.status === 'fulfilled' && Array.isArray(refsRes.value.data) && refsRes.value.data.length > 0) {
+        references = refsRes.value.data;
+      }
+
+      // Teacher Guide parts
+      let tgArticles = null;
+      if (tgArticlesRes.status === 'fulfilled' && Array.isArray(tgArticlesRes.value.data) && tgArticlesRes.value.data.length > 0) {
+        tgArticles = tgArticlesRes.value.data.map(mapArticleFromSupabase);
+        setStorageItem('vov_cms_tg_articles', tgArticles);
+      }
+      let tgActivities = null;
+      if (tgActivitiesRes.status === 'fulfilled' && Array.isArray(tgActivitiesRes.value.data) && tgActivitiesRes.value.data.length > 0) {
+        tgActivities = tgActivitiesRes.value.data.map(mapActivityFromSupabase);
+        setStorageItem('vov_cms_tg_activities', tgActivities);
+      }
+      let tgStrategies = null;
+      if (tgStrategiesRes.status === 'fulfilled' && Array.isArray(tgStrategiesRes.value.data) && tgStrategiesRes.value.data.length > 0) {
+        tgStrategies = tgStrategiesRes.value.data.map(mapStrategyFromSupabase);
+        setStorageItem('vov_cms_tg_strategies', tgStrategies);
+      }
+      let tgPrompts = null;
+      if (tgPromptsRes.status === 'fulfilled' && Array.isArray(tgPromptsRes.value.data) && tgPromptsRes.value.data.length > 0) {
+        tgPrompts = tgPromptsRes.value.data.map(mapPromptFromSupabase);
+        setStorageItem('vov_cms_tg_prompts', tgPrompts);
+      }
+      let tgLessonPlan = null;
+      if (tgLessonPlanRes.status === 'fulfilled' && Array.isArray(tgLessonPlanRes.value.data) && tgLessonPlanRes.value.data[0]) {
+        tgLessonPlan = mapLessonPlanFromSupabase(tgLessonPlanRes.value.data[0]);
+        setStorageItem('vov_cms_tg_lessonplan', tgLessonPlan);
+      }
+
+      const teacherGuide = buildTeacherGuidePayload(tgArticles, tgActivities, tgStrategies, tgPrompts, tgLessonPlan);
+
+      return {
+        ...fallbackData,
+        settings,
+        hero,
+        cards,
+        statistics,
+        podcasts,
+        stories,
+        gallery,
+        team,
+        team_by_role,
+        timeline,
+        references,
+        vocabulary,
+        teacherGuide,
+      };
     } catch (err) {
-      console.warn('Voices of Vehari API unreachable. Rendering with local fallback content.', err?.message || err);
+      console.warn('Direct Supabase fetch encountered error, serving cached content:', err?.message || err);
+      const team = getStorageItem('vov_cms_team', fallbackData.team);
+      return {
+        ...fallbackData,
+        settings: getStorageItem('vov_cms_settings', fallbackData.settings),
+        hero: getStorageItem('vov_cms_hero', fallbackData.hero),
+        cards: getStorageItem('vov_cms_cards', fallbackData.cards),
+        statistics: getStorageItem('vov_cms_statistics', fallbackData.statistics),
+        podcasts: getStorageItem('vov_cms_podcasts', fallbackData.podcasts),
+        stories: getStorageItem('vov_cms_stories', fallbackData.stories),
+        gallery: getStorageItem('vov_cms_gallery', fallbackData.gallery),
+        team,
+        team_by_role: {
+          leadership: team.filter((m) => m.role_category === 'leadership' && m.is_active !== false),
+          mentor: team.filter((m) => m.role_category === 'mentor' && m.is_active !== false),
+          student: team.filter((m) => m.role_category === 'student' && m.is_active !== false),
+          contributor: team.filter((m) => m.role_category === 'contributor' && m.is_active !== false),
+        },
+        timeline: getStorageItem('vov_cms_timeline', fallbackData.timeline),
+        references: fallbackData.references || [],
+        vocabulary: getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
+        teacherGuide: buildTeacherGuidePayload(),
+      };
     }
-    return {
-      ...fallbackData,
-      settings: getStorageItem('vov_cms_settings', fallbackData.settings),
-      hero: getStorageItem('vov_cms_hero', fallbackData.hero),
-      podcasts: getStorageItem('vov_cms_podcasts', fallbackData.podcasts),
-      stories: getStorageItem('vov_cms_stories', fallbackData.stories),
-      gallery: getStorageItem('vov_cms_gallery', fallbackData.gallery),
-      team: getStorageItem('vov_cms_team', fallbackData.team),
-      teacherGuide: buildTeacherGuidePayload(),
-      vocabulary: getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
-    };
   },
 
-  getPublicTeacherGuide: async (params) => {
-    try {
-      const res = await apiClient.get('/api/public/teacher-guide', { params, timeout: 3500 });
-      if (res.data && res.data.data) {
-        return res.data.data;
-      }
-    } catch {
-      // Fallback below
-    }
+  getPublicTeacherGuide: async () => {
     return buildTeacherGuidePayload();
   },
 
-  getPublicPodcasts: async (params) => {
+  getPublicPodcasts: async () => {
     try {
       const res = await supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc');
       if (Array.isArray(res.data) && res.data.length > 0) {
@@ -445,14 +603,6 @@ export const api = {
         return list;
       }
     } catch (_) {}
-    try {
-      const res = await apiClient.get('/api/public/podcasts', { params, timeout: 3500 });
-      if (res.data && res.data.data) {
-        return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
-      }
-    } catch {
-      // Fallback below
-    }
     return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
   },
 
@@ -465,91 +615,80 @@ export const api = {
         return list;
       }
     } catch (_) {}
-    try {
-      const res = await apiClient.get('/api/public/stories', { timeout: 3500 });
-      if (res.data && res.data.data) {
-        return mergeWithLocalCreations(res.data.data, 'vov_cms_stories', 'title');
-      }
-    } catch {
-      // Fallback below
-    }
     return getStorageItem('vov_cms_stories', fallbackData.stories);
   },
 
   getPublicGallery: async () => {
     try {
-      const res = await apiClient.get('/api/public/gallery', { timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_gallery', fallbackData.gallery);
-    }
+      const res = await supabaseClient.get('/gallery_items?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapGalleryFromSupabase);
+        setStorageItem('vov_cms_gallery', list);
+        return list;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_gallery', fallbackData.gallery);
   },
 
   getPublicTeam: async () => {
     try {
-      const res = await apiClient.get('/api/public/team', { timeout: 3500 });
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_team', fallbackData.team);
-    }
-  },
-
-  submitContact: async (data) => {
-    try {
-      const res = await apiClient.post('/api/public/contact', data, { timeout: 5000 });
-      return res.data;
-    } catch (err) {
-      if (!err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED' || (err.response && err.response.status >= 500) || (err.response && err.response.status === 404)) {
-        const saved = getStorageItem('vov_cms_submissions', []);
-        saved.push({ ...data, id: Date.now(), status: 'new', created_at: new Date().toISOString() });
-        setStorageItem('vov_cms_submissions', saved);
-        return { success: true, message: 'Thank you! Your message has been received.' };
+      const res = await supabaseClient.get('/team_members?select=*&order=sort_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapTeamMemberFromSupabase);
+        setStorageItem('vov_cms_team', list);
+        return list;
       }
-      throw new Error(err.response?.data?.message || 'Error submitting message. Please try again.');
+    } catch (_) {}
+    return getStorageItem('vov_cms_team', fallbackData.team);
+  },
+
+  getPublicVocabulary: async () => {
+    try {
+      const res = await supabaseClient.get('/vocabulary_words?select=*&order=display_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setStorageItem('vov_cms_vocabulary', res.data);
+        return res.data;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
+  },
+
+  // Contact submission
+  submitContact: async (data) => {
+    const payload = {
+      name: data.name || '',
+      email: data.email || '',
+      intent: data.intent || data.subject || 'Suggest a guest',
+      message: data.message || '',
+      status: 'unread',
+    };
+
+    try {
+      await supabaseClient.post('/contact_submissions', payload);
+      const saved = getStorageItem('vov_cms_submissions', []);
+      setStorageItem('vov_cms_submissions', [{ ...payload, id: Date.now(), created_at: new Date().toISOString() }, ...saved]);
+      notifyStorageUpdate();
+      return { success: true, message: 'Thank you! Your inquiry has been received and saved.' };
+    } catch (err) {
+      console.warn('Supabase submission fallback to local storage:', err);
+      const saved = getStorageItem('vov_cms_submissions', []);
+      setStorageItem('vov_cms_submissions', [{ ...payload, id: Date.now(), created_at: new Date().toISOString() }, ...saved]);
+      notifyStorageUpdate();
+      return { success: true, message: 'Thank you! Your message has been received.' };
     }
   },
 
-  // ================= AUTH ENDPOINTS =================
+  // ================= 2. AUTH ENDPOINTS =================
   login: async (credentials) => {
     const u = (credentials?.username || credentials?.email || '').trim();
     const p = (credentials?.password || '').trim();
 
     try {
-      const res = await apiClient.post('/api/auth/login', credentials, { timeout: 6000 });
+      const res = await apiClient.post('/api/auth/login', credentials, { timeout: 4000 });
       if (res.data && res.data.token) {
         return res.data;
       }
-    } catch (err) {
-      if (err.response && err.response.status === 401 && err.response.data?.message && err.response.data.message !== 'Invalid credentials') {
-        throw new Error(err.response.data.message);
-      }
-
-      if (
-        !err.response ||
-        err.response.status === 404 ||
-        err.code === 'ERR_NETWORK' ||
-        err.code === 'ECONNABORTED' ||
-        (err.response && err.response.status >= 500) ||
-        (err.response && err.response.status === 401)
-      ) {
-        if ((u === 'admin' || u === 'admin@voicesofvehari.edu.pk') && p === 'AdminPassword2026!') {
-          return {
-            success: true,
-            message: 'Login successful',
-            token: 'vov_admin_authenticated_session_' + Date.now(),
-            user: {
-              id: 1,
-              username: 'admin',
-              email: 'admin@voicesofvehari.edu.pk',
-              full_name: 'Voices of Vehari Admin',
-              role: 'admin',
-            },
-          };
-        }
-      }
-
-      throw new Error(err.response?.data?.message || 'Invalid username or password');
-    }
+    } catch (_) {}
 
     if ((u === 'admin' || u === 'admin@voicesofvehari.edu.pk') && p === 'AdminPassword2026!') {
       return {
@@ -571,62 +710,67 @@ export const api = {
 
   getMe: async () => {
     const token = localStorage.getItem('vov_admin_token');
-    if (token && token.startsWith('vov_admin_authenticated_session_')) {
-      const savedUser = localStorage.getItem('vov_admin_user');
-      return {
-        success: true,
-        user: savedUser
-          ? JSON.parse(savedUser)
-          : {
-              id: 1,
-              username: 'admin',
-              email: 'admin@voicesofvehari.edu.pk',
-              full_name: 'Voices of Vehari Admin',
-              role: 'admin',
-            },
-      };
-    }
-    try {
-      const res = await apiClient.get('/api/auth/me');
-      return res.data;
-    } catch (err) {
-      const savedUser = localStorage.getItem('vov_admin_user');
-      if (savedUser) {
-        return {
-          success: true,
-          user: JSON.parse(savedUser),
-        };
-      }
-      throw err;
-    }
+    const savedUser = localStorage.getItem('vov_admin_user');
+    return {
+      success: true,
+      user: savedUser
+        ? JSON.parse(savedUser)
+        : {
+            id: 1,
+            username: 'admin',
+            email: 'admin@voicesofvehari.edu.pk',
+            full_name: 'Voices of Vehari Admin',
+            role: 'admin',
+          },
+    };
   },
 
   updateProfile: async (data) => {
-    try {
-      const res = await apiClient.put('/api/auth/profile', data);
-      return res.data;
-    } catch {
-      const savedUser = getStorageItem('vov_admin_user', {});
-      const updated = { ...savedUser, ...data };
-      setStorageItem('vov_admin_user', updated);
-      return { success: true, message: 'Profile updated successfully', user: updated };
-    }
+    const savedUser = getStorageItem('vov_admin_user', {});
+    const updated = { ...savedUser, ...data };
+    setStorageItem('vov_admin_user', updated);
+    return { success: true, message: 'Profile updated successfully', user: updated };
   },
 
   logout: async () => {
-    try {
-      await apiClient.post('/api/auth/logout');
-    } catch (_) {}
     localStorage.removeItem('vov_admin_token');
     localStorage.removeItem('vov_admin_user');
   },
 
-  // ================= ADMIN CMS ENDPOINTS =================
+  // ================= 3. DASHBOARD STATS =================
   getDashboardStats: async () => {
     try {
-      const res = await apiClient.get('/api/admin/dashboard/stats');
-      return res.data.data;
-    } catch {
+      const [podsRes, storsRes, galsRes, tmsRes, subsRes, recentPodsRes] = await Promise.allSettled([
+        supabaseClient.get('/podcasts?select=id,is_published'),
+        supabaseClient.get('/stories?select=id,is_published'),
+        supabaseClient.get('/gallery_items?select=id'),
+        supabaseClient.get('/team_members?select=id'),
+        supabaseClient.get('/contact_submissions?select=*&order=created_at.desc'),
+        supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc&limit=5'),
+      ]);
+
+      const pods = podsRes.status === 'fulfilled' && Array.isArray(podsRes.value.data) ? podsRes.value.data : getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
+      const stors = storsRes.status === 'fulfilled' && Array.isArray(storsRes.value.data) ? storsRes.value.data : getStorageItem('vov_cms_stories', fallbackData.stories);
+      const gals = galsRes.status === 'fulfilled' && Array.isArray(galsRes.value.data) ? galsRes.value.data : getStorageItem('vov_cms_gallery', fallbackData.gallery);
+      const tms = tmsRes.status === 'fulfilled' && Array.isArray(tmsRes.value.data) ? tmsRes.value.data : getStorageItem('vov_cms_team', fallbackData.team);
+      const subs = subsRes.status === 'fulfilled' && Array.isArray(subsRes.value.data) ? subsRes.value.data : getStorageItem('vov_cms_submissions', []);
+      const recentPods = recentPodsRes.status === 'fulfilled' && Array.isArray(recentPodsRes.value.data) ? recentPodsRes.value.data.map(mapPodcastFromSupabase) : pods.slice(0, 5);
+
+      return {
+        counts: {
+          podcasts: pods.length,
+          published_podcasts: pods.filter((p) => p.is_published !== false).length,
+          stories: stors.length,
+          published_stories: stors.filter((s) => s.is_published !== false).length,
+          gallery: gals.length,
+          team: tms.length,
+          total_messages: subs.length,
+          unread_messages: subs.filter((s) => s.status === 'unread' || s.status === 'new').length,
+        },
+        recent_podcasts: recentPods,
+        recent_messages: subs.slice(0, 5),
+      };
+    } catch (_) {
       const pods = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
       const stors = getStorageItem('vov_cms_stories', fallbackData.stories);
       const gals = getStorageItem('vov_cms_gallery', fallbackData.gallery);
@@ -640,7 +784,8 @@ export const api = {
           published_stories: stors.filter((s) => s.is_published !== false).length,
           gallery: gals.length,
           team: tms.length,
-          submissions: subs.length,
+          total_messages: subs.length,
+          unread_messages: subs.filter((s) => s.status === 'unread' || s.status === 'new').length,
         },
         recent_podcasts: pods.slice(0, 5),
         recent_messages: subs.slice(0, 5),
@@ -648,55 +793,79 @@ export const api = {
     }
   },
 
+  // ================= 4. SETTINGS =================
   getSettings: async () => {
     try {
-      const res = await apiClient.get('/api/admin/settings');
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_settings', fallbackData.settings);
-    }
+      const res = await supabaseClient.get('/site_settings?select=*&limit=1');
+      if (Array.isArray(res.data) && res.data[0]) {
+        setStorageItem('vov_cms_settings', res.data[0]);
+        return res.data[0];
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_settings', fallbackData.settings);
   },
 
   updateSettings: async (data) => {
-    setStorageItem('vov_cms_settings', data);
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
+    setStorageItem('vov_cms_settings', { ...data, id: 1 });
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put('/api/admin/settings', data);
-      if (res.data?.data) {
-        setStorageItem('vov_cms_settings', res.data.data);
+      const res = await supabaseClient.patch('/site_settings?id=eq.1', patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        setStorageItem('vov_cms_settings', res.data[0]);
         notifyStorageUpdate();
+        return { success: true, message: 'Settings saved successfully', data: res.data[0] };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Settings saved successfully' };
+    } catch (err) {
+      console.warn('Supabase updateSettings failed, saved locally:', err);
     }
+    return { success: true, message: 'Settings saved successfully' };
   },
 
+  // ================= 5. HOME HERO =================
   getHero: async () => {
     try {
-      const res = await apiClient.get('/api/admin/hero');
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_hero', fallbackData.hero);
-    }
+      const res = await supabaseClient.get('/hero_sections?select=*&limit=1');
+      if (Array.isArray(res.data) && res.data[0]) {
+        setStorageItem('vov_cms_hero', res.data[0]);
+        return res.data[0];
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_hero', fallbackData.hero);
   },
 
   updateHero: async (data) => {
-    setStorageItem('vov_cms_hero', data);
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
+    setStorageItem('vov_cms_hero', { ...data, id: 1 });
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put('/api/admin/hero', data);
-      if (res.data?.data) {
-        setStorageItem('vov_cms_hero', res.data.data);
+      const res = await supabaseClient.patch('/hero_sections?id=eq.1', patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        setStorageItem('vov_cms_hero', res.data[0]);
         notifyStorageUpdate();
+        return { success: true, message: 'Hero updated successfully', data: res.data[0] };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Hero updated successfully' };
+    } catch (err) {
+      console.warn('Supabase updateHero failed, saved locally:', err);
     }
+    return { success: true, message: 'Hero updated successfully' };
   },
 
-  // Podcasts
+  // ================= 6. PODCASTS =================
   getAdminPodcasts: async () => {
     try {
       const res = await supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc');
@@ -706,14 +875,6 @@ export const api = {
         return list;
       }
     } catch (_) {}
-    try {
-      const res = await apiClient.get('/api/admin/podcasts');
-      if (res.data && res.data.data) {
-        return mergeWithLocalCreations(res.data.data, 'vov_cms_podcasts', 'title');
-      }
-    } catch {
-      // fallback below
-    }
     return getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
   },
 
@@ -726,15 +887,15 @@ export const api = {
       guest: data.guest || '',
       host: data.host || '',
       description: data.description || '',
-      category: data.category || 'general',
+      category: (data.category || 'general').toLowerCase(),
       tags_json: JSON.stringify(tags),
       audio_url: data.audio_url || '',
       video_url: data.video_url || '',
       cover_image_url: data.cover_image_url || '/assets/podcast_upcoming.jpeg',
       transcript_url: data.transcript_url || '#transcript',
       learning_url: data.learning_url || 'learning.html',
-      sort_order: Number(data.sort_order) || (list.length + 1),
-      is_published: data.is_published !== undefined ? data.is_published : true,
+      sort_order: Number(data.sort_order) || 1,
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
       is_featured: Boolean(data.is_featured),
     };
 
@@ -752,25 +913,13 @@ export const api = {
         const updated = [saved, ...currentList.filter(p => p.id !== tempPod.id && p.id !== saved.id)];
         setStorageItem('vov_cms_podcasts', updated);
         notifyStorageUpdate();
-        return { success: true, data: saved, message: 'Podcast created successfully' };
+        return { success: true, data: saved, message: 'Podcast episode created successfully' };
       }
     } catch (err) {
-      console.warn('Supabase podcast create failed, trying backend API:', err?.message || err);
+      console.warn('Supabase podcast create error:', err);
     }
 
-    try {
-      const res = await apiClient.post('/api/admin/podcasts', data);
-      if (res.data?.data) {
-        const serverPod = res.data.data;
-        const currentList = getStorageItem('vov_cms_podcasts', [tempPod, ...list]);
-        const serverUpdated = [serverPod, ...currentList.filter(p => p.id !== serverPod.id && p.id !== tempPod.id)];
-        setStorageItem('vov_cms_podcasts', serverUpdated);
-        notifyStorageUpdate();
-        return res.data;
-      }
-    } catch (_) {}
-
-    return { success: true, message: 'Podcast created successfully', data: tempPod };
+    return { success: true, message: 'Podcast episode created successfully', data: tempPod };
   },
 
   updatePodcast: async (id, data) => {
@@ -784,6 +933,9 @@ export const api = {
     if (tags !== undefined) {
       patchPayload.tags_json = JSON.stringify(tags);
       delete patchPayload.tags;
+    }
+    if (patchPayload.category) {
+      patchPayload.category = patchPayload.category.toLowerCase();
     }
 
     const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data, ...(tags ? { tags } : {}) } : p));
@@ -803,20 +955,8 @@ export const api = {
         return { success: true, data: saved, message: 'Podcast updated successfully' };
       }
     } catch (err) {
-      console.warn('Supabase podcast update failed, trying backend API:', err?.message || err);
+      console.warn('Supabase podcast update error:', err);
     }
-
-    try {
-      const res = await apiClient.put(`/api/admin/podcasts/${id}`, data);
-      if (res.data?.data) {
-        const serverPod = res.data.data;
-        const currentList = getStorageItem('vov_cms_podcasts', updated);
-        const serverUpdated = currentList.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...serverPod } : p));
-        setStorageItem('vov_cms_podcasts', serverUpdated);
-        notifyStorageUpdate();
-      }
-      return res.data;
-    } catch (_) {}
 
     return { success: true, message: 'Podcast updated successfully' };
   },
@@ -829,10 +969,6 @@ export const api = {
 
     try {
       await supabaseClient.delete(`/podcasts?id=eq.${id}`);
-    } catch (_) {}
-
-    try {
-      await apiClient.delete(`/api/admin/podcasts/${id}`);
     } catch (_) {}
 
     return { success: true, message: 'Podcast deleted successfully' };
@@ -862,7 +998,7 @@ export const api = {
     return { success: true, message: 'Publish status toggled' };
   },
 
-  // Stories
+  // ================= 7. STORIES =================
   getAdminStories: async () => {
     try {
       const res = await supabaseClient.get('/stories?select=*&order=sort_order.asc,created_at.desc');
@@ -872,14 +1008,6 @@ export const api = {
         return list;
       }
     } catch (_) {}
-    try {
-      const res = await apiClient.get('/api/admin/stories');
-      if (res.data && res.data.data) {
-        return mergeWithLocalCreations(res.data.data, 'vov_cms_stories', 'title');
-      }
-    } catch {
-      // fallback below
-    }
     return getStorageItem('vov_cms_stories', fallbackData.stories);
   },
 
@@ -892,9 +1020,9 @@ export const api = {
       excerpt: data.excerpt || '',
       content: data.content || '',
       author: data.author || 'Voices of Vehari Team',
-      image_url: data.image_url || '',
+      image_url: data.image_url || null,
       sort_order: Number(data.sort_order) || (list.length + 1),
-      is_published: data.is_published !== undefined ? data.is_published : true,
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
 
     const tempStory = { ...payload, id: Date.now() };
@@ -914,20 +1042,8 @@ export const api = {
         return { success: true, data: saved, message: 'Story created successfully' };
       }
     } catch (err) {
-      console.warn('Supabase story create failed, trying backend API:', err?.message || err);
+      console.warn('Supabase story create error:', err);
     }
-
-    try {
-      const res = await apiClient.post('/api/admin/stories', data);
-      if (res.data?.data) {
-        const serverStory = res.data.data;
-        const currentList = getStorageItem('vov_cms_stories', [tempStory, ...list]);
-        const serverUpdated = [serverStory, ...currentList.filter(s => s.id !== serverStory.id && s.id !== tempStory.id)];
-        setStorageItem('vov_cms_stories', serverUpdated);
-        notifyStorageUpdate();
-        return res.data;
-      }
-    } catch (_) {}
 
     return { success: true, message: 'Story created successfully', data: tempStory };
   },
@@ -956,20 +1072,8 @@ export const api = {
         return { success: true, data: saved, message: 'Story updated successfully' };
       }
     } catch (err) {
-      console.warn('Supabase story update failed, trying backend API:', err?.message || err);
+      console.warn('Supabase story update error:', err);
     }
-
-    try {
-      const res = await apiClient.put(`/api/admin/stories/${id}`, data);
-      if (res.data?.data) {
-        const serverStory = res.data.data;
-        const currentList = getStorageItem('vov_cms_stories', updated);
-        const serverUpdated = currentList.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...serverStory } : s));
-        setStorageItem('vov_cms_stories', serverUpdated);
-        notifyStorageUpdate();
-      }
-      return res.data;
-    } catch (_) {}
 
     return { success: true, message: 'Story updated successfully' };
   },
@@ -984,10 +1088,6 @@ export const api = {
       await supabaseClient.delete(`/stories?id=eq.${id}`);
     } catch (_) {}
 
-    try {
-      await apiClient.delete(`/api/admin/stories/${id}`);
-    } catch (_) {}
-
     return { success: true, message: 'Story deleted successfully' };
   },
 
@@ -995,7 +1095,7 @@ export const api = {
     const list = getStorageItem('vov_cms_stories', fallbackData.stories);
     const target = list.find((s) => s.id === id || s.id === Number(id));
     const nextStatus = target ? !target.is_published : true;
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: nextStatus } : s));
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: nextStatus } : p));
     setStorageItem('vov_cms_stories', updated);
     notifyStorageUpdate();
 
@@ -1015,56 +1115,82 @@ export const api = {
     return { success: true, message: 'Publish status toggled' };
   },
 
-  // Gallery
+  // ================= 8. GALLERY =================
   getAdminGallery: async () => {
     try {
-      const res = await apiClient.get('/api/admin/gallery');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_gallery', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/gallery_items?select=*&order=sort_order.asc,created_at.desc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapGalleryFromSupabase);
+        setStorageItem('vov_cms_gallery', list);
+        return list;
       }
-    } catch {
-      // fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_gallery', fallbackData.gallery);
   },
 
   createGalleryItem: async (data) => {
     const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
-    const newItem = { ...data, id: Date.now(), is_published: true };
-    setStorageItem('vov_cms_gallery', [newItem, ...list]);
+    const payload = {
+      title: data.title || '',
+      caption: data.caption || '',
+      category: data.category || 'general',
+      image_url: data.image_url || '',
+      alt_text: data.alt_text || data.title || '',
+      sort_order: Number(data.sort_order) || (list.length + 1),
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
+    };
+
+    const tempItem = { ...payload, id: Date.now() };
+    setStorageItem('vov_cms_gallery', [tempItem, ...list]);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/gallery', data);
-      if (res.data?.data) {
-        const serverItem = res.data.data;
-        const serverUpdated = [serverItem, ...list.filter(g => g.id !== serverItem.id && g.id !== newItem.id)];
-        setStorageItem('vov_cms_gallery', serverUpdated);
+      const res = await supabaseClient.post('/gallery_items', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapGalleryFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_gallery', [tempItem, ...list]);
+        const updated = [saved, ...currentList.filter(g => g.id !== tempItem.id && g.id !== saved.id)];
+        setStorageItem('vov_cms_gallery', updated);
         notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Image added to gallery!' };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Gallery item added successfully', data: newItem };
+    } catch (err) {
+      console.warn('Supabase gallery create error:', err);
     }
+
+    return { success: true, message: 'Image added to gallery!', data: tempItem };
   },
 
   updateGalleryItem: async (id, data) => {
     const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
     const updated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, ...data } : g));
     setStorageItem('vov_cms_gallery', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/gallery/${id}`, data);
-      if (res.data?.data) {
-        const serverItem = res.data.data;
-        const serverUpdated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, ...serverItem } : g));
+      const res = await supabaseClient.patch(`/gallery_items?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapGalleryFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_gallery', updated);
+        const serverUpdated = currentList.map((g) => (g.id === id || g.id === Number(id) ? saved : g));
         setStorageItem('vov_cms_gallery', serverUpdated);
         notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Gallery item updated successfully' };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Gallery item updated successfully' };
+    } catch (err) {
+      console.warn('Supabase gallery update error:', err);
     }
+
+    return { success: true, message: 'Gallery item updated successfully' };
   },
 
   deleteGalleryItem: async (id) => {
@@ -1072,64 +1198,106 @@ export const api = {
     const updated = list.filter((g) => g.id !== id && g.id !== Number(id));
     setStorageItem('vov_cms_gallery', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/gallery/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Gallery item deleted successfully' };
-    }
+      await supabaseClient.delete(`/gallery_items?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Gallery item deleted' };
   },
 
-  // Team
+  toggleGalleryPublish: async (id) => {
+    const list = getStorageItem('vov_cms_gallery', fallbackData.gallery);
+    const target = list.find((g) => g.id === id || g.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((g) => (g.id === id || g.id === Number(id) ? { ...g, is_published: nextStatus } : g));
+    setStorageItem('vov_cms_gallery', updated);
+    notifyStorageUpdate();
+
+    try {
+      await supabaseClient.patch(`/gallery_items?id=eq.${id}`, { is_published: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Publish status toggled' };
+  },
+
+  // ================= 9. TEAM MEMBERS =================
   getAdminTeam: async () => {
     try {
-      const res = await apiClient.get('/api/admin/team');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_team', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/team_members?select=*&order=sort_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const list = res.data.map(mapTeamMemberFromSupabase);
+        setStorageItem('vov_cms_team', list);
+        return list;
       }
-    } catch {
-      // fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_team', fallbackData.team);
   },
 
   createTeamMember: async (data) => {
     const list = getStorageItem('vov_cms_team', fallbackData.team);
-    const newMember = { ...data, id: Date.now() };
-    setStorageItem('vov_cms_team', [newMember, ...list]);
+    const payload = {
+      name: data.name || '',
+      role_category: data.role_category || 'student',
+      designation: data.designation || '',
+      initials: data.initials || (data.name ? data.name.split(' ').map(n => n[0]).join('').slice(0, 3).toUpperCase() : 'TM'),
+      image_url: data.image_url || null,
+      bio: data.bio || null,
+      sort_order: Number(data.sort_order) || (list.length + 1),
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+    };
+
+    const tempMember = { ...payload, id: Date.now() };
+    setStorageItem('vov_cms_team', [tempMember, ...list]);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/team', data);
-      if (res.data?.data) {
-        const serverMember = res.data.data;
-        const serverUpdated = [serverMember, ...list.filter(m => m.id !== serverMember.id && m.id !== newMember.id)];
-        setStorageItem('vov_cms_team', serverUpdated);
+      const res = await supabaseClient.post('/team_members', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapTeamMemberFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_team', [tempMember, ...list]);
+        const updated = [saved, ...currentList.filter(m => m.id !== tempMember.id && m.id !== saved.id)];
+        setStorageItem('vov_cms_team', updated);
         notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Team member added successfully' };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Team member added successfully', data: newMember };
+    } catch (err) {
+      console.warn('Supabase team member create error:', err);
     }
+
+    return { success: true, message: 'Team member added successfully', data: tempMember };
   },
 
   updateTeamMember: async (id, data) => {
     const list = getStorageItem('vov_cms_team', fallbackData.team);
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
     const updated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, ...data } : m));
     setStorageItem('vov_cms_team', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/team/${id}`, data);
-      if (res.data?.data) {
-        const serverMember = res.data.data;
-        const serverUpdated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, ...serverMember } : m));
+      const res = await supabaseClient.patch(`/team_members?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapTeamMemberFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_team', updated);
+        const serverUpdated = currentList.map((m) => (m.id === id || m.id === Number(id) ? saved : m));
         setStorageItem('vov_cms_team', serverUpdated);
         notifyStorageUpdate();
+        return { success: true, data: saved, message: 'Team member updated successfully' };
       }
-      return res.data;
-    } catch {
-      return { success: true, message: 'Team member updated successfully' };
+    } catch (err) {
+      console.warn('Supabase team member update error:', err);
     }
+
+    return { success: true, message: 'Team member updated successfully' };
   },
 
   deleteTeamMember: async (id) => {
@@ -1137,259 +1305,417 @@ export const api = {
     const updated = list.filter((m) => m.id !== id && m.id !== Number(id));
     setStorageItem('vov_cms_team', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/team/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Team member deleted successfully' };
-    }
+      await supabaseClient.delete(`/team_members?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Team member deleted successfully' };
   },
 
-  // Section Cards
+  toggleTeamMemberActive: async (id) => {
+    const list = getStorageItem('vov_cms_team', fallbackData.team);
+    const target = list.find((m) => m.id === id || m.id === Number(id));
+    const nextStatus = target ? !target.is_active : true;
+    const updated = list.map((m) => (m.id === id || m.id === Number(id) ? { ...m, is_active: nextStatus } : m));
+    setStorageItem('vov_cms_team', updated);
+    notifyStorageUpdate();
+
+    try {
+      await supabaseClient.patch(`/team_members?id=eq.${id}`, { is_active: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
+  },
+
+  // ================= 10. SECTION CARDS =================
   getAdminCards: async (group) => {
     try {
-      const res = await apiClient.get('/api/admin/cards', { params: { group } });
-      return res.data.data;
-    } catch {
-      const allCards = getStorageItem('vov_cms_cards', fallbackData.cards);
-      return group ? (allCards[group] || []) : allCards;
-    }
+      const res = await supabaseClient.get('/section_cards?select=*&order=sort_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapCardFromSupabase);
+        return group ? mapped.filter((c) => c.section_group === group) : mapped;
+      }
+    } catch (_) {}
+    const allCards = getStorageItem('vov_cms_cards', fallbackData.cards);
+    return group ? (allCards[group] || []) : allCards;
   },
 
   createCard: async (data) => {
+    const bullets = Array.isArray(data.bullets) ? data.bullets : (data.bullets ? data.bullets.split('\n').map(b => b.trim()).filter(Boolean) : []);
+    const payload = {
+      section_group: data.section_group || 'home_idea',
+      icon: data.icon || '',
+      tag: data.tag || null,
+      title: data.title || '',
+      description: data.description || '',
+      bullets_json: bullets.length > 0 ? JSON.stringify(bullets) : null,
+      link_url: data.link_url || null,
+      sort_order: Number(data.sort_order) || 1,
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+    };
+
     try {
-      const res = await apiClient.post('/api/admin/cards', data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Card added successfully' };
+      const res = await supabaseClient.post('/section_cards', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Card added successfully', data: res.data?.[0] };
+    } catch (err) {
+      console.warn('Supabase createCard error:', err);
     }
+    return { success: true, message: 'Card added successfully' };
   },
 
   updateCard: async (id, data) => {
-    try {
-      const res = await apiClient.put(`/api/admin/cards/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Card updated successfully' };
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    if (data.bullets !== undefined) {
+      const bullets = Array.isArray(data.bullets) ? data.bullets : (data.bullets ? data.bullets.split('\n').map(b => b.trim()).filter(Boolean) : []);
+      patchPayload.bullets_json = bullets.length > 0 ? JSON.stringify(bullets) : null;
+      delete patchPayload.bullets;
     }
+
+    try {
+      const res = await supabaseClient.patch(`/section_cards?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Card updated successfully', data: res.data?.[0] };
+    } catch (err) {
+      console.warn('Supabase updateCard error:', err);
+    }
+    return { success: true, message: 'Card updated successfully' };
   },
 
   deleteCard: async (id) => {
     try {
-      const res = await apiClient.delete(`/api/admin/cards/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Card deleted successfully' };
-    }
+      await supabaseClient.delete(`/section_cards?id=eq.${id}`);
+      notifyStorageUpdate();
+    } catch (_) {}
+    return { success: true, message: 'Card deleted successfully' };
   },
 
-  // Statistics
+  // ================= 11. STATISTICS =================
   getAdminStatistics: async () => {
     try {
-      const res = await apiClient.get('/api/admin/statistics');
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_statistics', fallbackData.statistics);
-    }
+      const res = await supabaseClient.get('/statistics?select=*&order=sort_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setStorageItem('vov_cms_statistics', res.data);
+        return res.data;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_statistics', fallbackData.statistics);
   },
 
   createStatistic: async (data) => {
+    const payload = {
+      value: data.value || '',
+      label: data.label || '',
+      sort_order: Number(data.sort_order) || 1,
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+    };
     try {
-      const res = await apiClient.post('/api/admin/statistics', data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Statistic created successfully' };
+      const res = await supabaseClient.post('/statistics', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Statistic created successfully', data: res.data?.[0] };
+    } catch (err) {
+      console.warn('Supabase createStatistic error:', err);
     }
+    return { success: true, message: 'Statistic created successfully' };
   },
 
   updateStatistic: async (id, data) => {
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
     try {
-      const res = await apiClient.put(`/api/admin/statistics/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Statistic updated successfully' };
+      const res = await supabaseClient.patch(`/statistics?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Statistic updated successfully', data: res.data?.[0] };
+    } catch (err) {
+      console.warn('Supabase updateStatistic error:', err);
     }
+    return { success: true, message: 'Statistic updated successfully' };
   },
 
   deleteStatistic: async (id) => {
     try {
-      const res = await apiClient.delete(`/api/admin/statistics/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Statistic deleted successfully' };
-    }
+      await supabaseClient.delete(`/statistics?id=eq.${id}`);
+      notifyStorageUpdate();
+    } catch (_) {}
+    return { success: true, message: 'Statistic deleted successfully' };
   },
 
-  // Timeline
+  // ================= 12. METHODOLOGY TIMELINE =================
   getAdminTimeline: async () => {
     try {
-      const res = await apiClient.get('/api/admin/timeline');
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_timeline', fallbackData.timeline);
-    }
+      const res = await supabaseClient.get('/timeline_items?select=*&order=sort_order.asc,phase_number.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapTimelineFromSupabase);
+        setStorageItem('vov_cms_timeline', mapped);
+        return mapped;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_timeline', fallbackData.timeline);
+  },
+
+  createTimeline: async (data) => {
+    const paragraphs = Array.isArray(data.paragraphs) ? data.paragraphs : (data.paragraphs ? data.paragraphs.split('\n\n').map(p => p.trim()).filter(Boolean) : []);
+    const payload = {
+      phase_number: Number(data.phase_number) || 1,
+      duration: data.duration || '',
+      title: data.title || '',
+      paragraphs_json: JSON.stringify(paragraphs),
+      sort_order: Number(data.sort_order) || 1,
+      is_active: true,
+    };
+    try {
+      const res = await supabaseClient.post('/timeline_items', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Timeline phase added successfully', data: res.data?.[0] };
+    } catch (_) {}
+    return { success: true, message: 'Timeline phase added successfully' };
   },
 
   updateTimeline: async (id, data) => {
-    try {
-      const res = await apiClient.put(`/api/admin/timeline/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Timeline updated successfully' };
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    if (data.paragraphs !== undefined) {
+      const paragraphs = Array.isArray(data.paragraphs) ? data.paragraphs : (data.paragraphs ? data.paragraphs.split('\n\n').map(p => p.trim()).filter(Boolean) : []);
+      patchPayload.paragraphs_json = JSON.stringify(paragraphs);
+      delete patchPayload.paragraphs;
     }
+
+    try {
+      const res = await supabaseClient.patch(`/timeline_items?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      notifyStorageUpdate();
+      return { success: true, message: 'Timeline updated successfully', data: res.data?.[0] };
+    } catch (err) {
+      console.warn('Supabase updateTimeline error:', err);
+    }
+    return { success: true, message: 'Timeline updated successfully' };
   },
 
-  // Submissions
+  deleteTimeline: async (id) => {
+    try {
+      await supabaseClient.delete(`/timeline_items?id=eq.${id}`);
+      notifyStorageUpdate();
+    } catch (_) {}
+    return { success: true, message: 'Timeline item deleted successfully' };
+  },
+
+  // ================= 13. INQUIRIES & SUBMISSIONS =================
   getAdminSubmissions: async () => {
     try {
-      const res = await apiClient.get('/api/admin/submissions');
-      return res.data.data;
-    } catch {
-      return getStorageItem('vov_cms_submissions', []);
-    }
+      const res = await supabaseClient.get('/contact_submissions?select=*&order=created_at.desc');
+      if (Array.isArray(res.data)) {
+        setStorageItem('vov_cms_submissions', res.data);
+        return res.data;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_submissions', []);
   },
 
   updateSubmissionStatus: async (id, status) => {
     try {
-      const res = await apiClient.patch(`/api/admin/submissions/${id}/status`, { status });
-      return res.data;
-    } catch {
-      const list = getStorageItem('vov_cms_submissions', []);
-      const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, status } : s));
-      setStorageItem('vov_cms_submissions', updated);
-      return { success: true, message: 'Submission status updated' };
-    }
+      await supabaseClient.patch(`/contact_submissions?id=eq.${id}`, { status });
+      const current = getStorageItem('vov_cms_submissions', []);
+      setStorageItem('vov_cms_submissions', current.map(s => s.id === id || s.id === Number(id) ? { ...s, status } : s));
+      notifyStorageUpdate();
+    } catch (_) {}
+    return { success: true, message: `Status updated to ${status}` };
   },
 
   deleteSubmission: async (id) => {
     try {
-      const res = await apiClient.delete(`/api/admin/submissions/${id}`);
-      return res.data;
-    } catch {
-      const list = getStorageItem('vov_cms_submissions', []);
-      const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
-      setStorageItem('vov_cms_submissions', updated);
-      return { success: true, message: 'Submission deleted successfully' };
-    }
+      await supabaseClient.delete(`/contact_submissions?id=eq.${id}`);
+      const current = getStorageItem('vov_cms_submissions', []);
+      setStorageItem('vov_cms_submissions', current.filter(s => s.id !== id && s.id !== Number(id)));
+      notifyStorageUpdate();
+    } catch (_) {}
+    return { success: true, message: 'Inquiry deleted' };
   },
 
-  // Media
+  // ================= 14. MEDIA LIBRARY & UPLOADS =================
   uploadMedia: async (file, altText = '') => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('alt_text', altText);
+      const toBase64 = (f) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(f);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = (e) => reject(e);
+        });
 
-      const res = await apiClient.post('/api/admin/media/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return res.data;
-    } catch {
-      const mockUrl = URL.createObjectURL(file);
+      let publicUrl = '';
+      if (file && typeof file === 'object' && typeof FileReader !== 'undefined') {
+        publicUrl = await toBase64(file);
+      } else {
+        publicUrl = URL.createObjectURL(file);
+      }
+
+      const mediaRecord = {
+        filename: file.name || `media_${Date.now()}`,
+        original_name: file.name || 'file',
+        file_type: (file.type && file.type.startsWith('image/')) ? 'image' : ((file.type && file.type.startsWith('audio/')) ? 'audio' : 'document'),
+        mime_type: file.type || 'application/octet-stream',
+        file_size: file.size || 0,
+        file_path: 'base64_data',
+        public_url: publicUrl,
+        alt_text: altText || file.name || '',
+      };
+
+      try {
+        const res = await supabaseClient.post('/media_files', mediaRecord, {
+          headers: { Prefer: 'return=representation' }
+        });
+        if (Array.isArray(res.data) && res.data[0]) {
+          return { success: true, message: 'Media uploaded successfully', data: res.data[0], file: res.data[0] };
+        }
+      } catch (_) {}
+
       return {
         success: true,
         message: 'Media uploaded successfully',
-        file: {
-          id: Date.now(),
-          url: mockUrl,
-          filename: file.name,
-          alt_text: altText,
-        },
+        data: { ...mediaRecord, id: Date.now() },
+        file: { ...mediaRecord, id: Date.now() }
       };
+    } catch (err) {
+      return { success: false, message: err.message || 'Upload failed' };
     }
   },
 
   getMediaList: async (type) => {
     try {
-      const res = await apiClient.get('/api/admin/media/', { params: { type } });
-      return res.data.data;
-    } catch {
-      return [];
-    }
+      let url = '/media_files?select=*&order=created_at.desc';
+      if (type) url += `&file_type=eq.${type}`;
+      const res = await supabaseClient.get(url);
+      if (Array.isArray(res.data)) {
+        return res.data;
+      }
+    } catch (_) {}
+    return [];
   },
 
   deleteMedia: async (id) => {
     try {
-      const res = await apiClient.delete(`/api/admin/media/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Media deleted successfully' };
-    }
+      await supabaseClient.delete(`/media_files?id=eq.${id}`);
+    } catch (_) {}
+    return { success: true, message: 'Media deleted successfully' };
   },
 
-  // ================= TEACHER GUIDE: ARTICLES =================
+  // ================= 15. TEACHER GUIDE ARTICLES =================
   getAdminTeacherArticles: async () => {
     try {
-      const res = await apiClient.get('/api/admin/teacher-guide/articles');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_tg_articles', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/teacher_guide_articles?select=*&order=display_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapArticleFromSupabase);
+        setStorageItem('vov_cms_tg_articles', mapped);
+        return mapped;
       }
-    } catch {
-      // Fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_tg_articles', getInitialArticles());
   },
 
   createTeacherArticle: async (data) => {
     const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
-    const newArt = {
-      ...data,
-      id: Date.now(),
-      is_published: true,
+    const materials = Array.isArray(data.materials) ? data.materials : [];
+    const steps = Array.isArray(data.steps) ? data.steps : [];
+    const payload = {
+      title: data.title || '',
+      slug: data.slug || `${slugify(data.title || 'article')}-${Date.now()}`,
+      category: data.category || 'Lesson Ideas',
+      short_description: data.short_description || data.excerpt || '',
+      content: data.content || data.short_description || '',
+      materials_json: JSON.stringify(materials),
+      steps_json: JSON.stringify(steps),
+      image_url: data.image_url || null,
+      level: data.level || 'Intermediate',
+      estimated_time: data.estimated_time || data.time || '30–45 minutes',
+      author: data.author || 'Voices of Vehari Team',
       display_order: Number(data.display_order) || (list.length + 1),
-      short_description: data.short_description || '',
-      excerpt: data.short_description || '',
-      time: data.estimated_time || '30–45 minutes',
-      details: {
-        objective: data.content || data.short_description,
-        materials: Array.isArray(data.materials) ? data.materials : [],
-        steps: Array.isArray(data.steps) ? data.steps : []
-      }
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
+
+    const tempArt = mapArticleFromSupabase({ ...payload, id: Date.now() });
+    setStorageItem('vov_cms_tg_articles', [tempArt, ...list]);
+    notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/teacher-guide/articles', data);
-      const serverArt = res.data?.data || newArt;
-      setStorageItem('vov_cms_tg_articles', [serverArt, ...list]);
-      notifyStorageUpdate();
-      return res.data;
-    } catch {
-      const updated = [newArt, ...list];
-      setStorageItem('vov_cms_tg_articles', updated);
-      notifyStorageUpdate();
-      return { success: true, message: 'Article created successfully', data: newArt };
+      const res = await supabaseClient.post('/teacher_guide_articles', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapArticleFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_articles', [tempArt, ...list]);
+        const updated = [saved, ...currentList.filter(a => a.id !== tempArt.id && a.id !== saved.id)];
+        setStorageItem('vov_cms_tg_articles', updated);
+        notifyStorageUpdate();
+        return { success: true, message: 'Article created successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase createTeacherArticle error:', err);
     }
+
+    return { success: true, message: 'Article created successfully', data: tempArt };
   },
 
   updateTeacherArticle: async (id, data) => {
     const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
-    const updated = list.map((a) => {
-      if (a.id === id || a.id === Number(id)) {
-        return {
-          ...a,
-          ...data,
-          short_description: data.short_description !== undefined ? data.short_description : a.short_description,
-          excerpt: data.short_description !== undefined ? data.short_description : a.excerpt,
-          time: data.estimated_time !== undefined ? data.estimated_time : (a.time || a.estimated_time),
-          details: {
-            objective: data.content !== undefined ? data.content : a.details?.objective,
-            materials: data.materials !== undefined ? data.materials : a.details?.materials,
-            steps: data.steps !== undefined ? data.steps : a.details?.steps,
-          }
-        };
-      }
-      return a;
-    });
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    delete patchPayload.details;
+    delete patchPayload.excerpt;
+    delete patchPayload.time;
+    if (data.materials !== undefined) {
+      patchPayload.materials_json = JSON.stringify(Array.isArray(data.materials) ? data.materials : []);
+      delete patchPayload.materials;
+    }
+    if (data.steps !== undefined) {
+      patchPayload.steps_json = JSON.stringify(Array.isArray(data.steps) ? data.steps : []);
+      delete patchPayload.steps;
+    }
+    if (data.short_description !== undefined) {
+      patchPayload.short_description = data.short_description;
+    }
+
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, ...data } : a));
     setStorageItem('vov_cms_tg_articles', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/teacher-guide/articles/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Article updated successfully' };
+      const res = await supabaseClient.patch(`/teacher_guide_articles?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapArticleFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_articles', updated);
+        setStorageItem('vov_cms_tg_articles', currentList.map(a => a.id === id || a.id === Number(id) ? saved : a));
+        notifyStorageUpdate();
+        return { success: true, message: 'Article updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateTeacherArticle error:', err);
     }
+
+    return { success: true, message: 'Article updated successfully' };
   },
 
   deleteTeacherArticle: async (id) => {
@@ -1397,84 +1723,118 @@ export const api = {
     const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
     setStorageItem('vov_cms_tg_articles', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/teacher-guide/articles/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Article deleted successfully' };
-    }
+      await supabaseClient.delete(`/teacher_guide_articles?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Article deleted successfully' };
   },
 
   toggleTeacherArticlePublish: async (id) => {
     const list = getStorageItem('vov_cms_tg_articles', getInitialArticles());
-    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+    const target = list.find((a) => a.id === id || a.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: nextStatus } : a));
     setStorageItem('vov_cms_tg_articles', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/teacher-guide/articles/${id}/toggle-publish`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Status toggled successfully' };
-    }
+      await supabaseClient.patch(`/teacher_guide_articles?id=eq.${id}`, { is_published: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
   },
 
-  // ================= TEACHER GUIDE: FEATURED ACTIVITIES =================
+  // ================= 16. TEACHER GUIDE ACTIVITIES =================
   getAdminTeacherActivities: async () => {
     try {
-      const res = await apiClient.get('/api/admin/teacher-guide/activities');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_tg_activities', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/teacher_guide_activities?select=*&order=id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapActivityFromSupabase);
+        setStorageItem('vov_cms_tg_activities', mapped);
+        return mapped;
       }
-    } catch {
-      // Fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_tg_activities', getInitialActivities());
   },
 
   createTeacherActivity: async (data) => {
     const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
-    const newAct = {
-      ...data,
-      id: Date.now(),
-      is_published: true,
-      time: data.estimated_time || '35 minutes',
-      teacherTip: data.teacher_tip || '',
-      objectives: Array.isArray(data.objectives) ? data.objectives : [],
-      steps: Array.isArray(data.steps) ? data.steps : []
+    const payload = {
+      title: data.title || '',
+      purpose: data.purpose || '',
+      objectives_json: JSON.stringify(Array.isArray(data.objectives) ? data.objectives : []),
+      steps_json: JSON.stringify(Array.isArray(data.steps) ? data.steps : []),
+      teacher_tip: data.teacher_tip || data.teacherTip || '',
+      estimated_time: data.estimated_time || data.time || '35 minutes',
+      level: data.level || 'Intermediate',
+      image_url: data.image_url || null,
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
+
+    const tempAct = mapActivityFromSupabase({ ...payload, id: Date.now() });
+    setStorageItem('vov_cms_tg_activities', [tempAct, ...list]);
+    notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/teacher-guide/activities', data);
-      const serverAct = res.data?.data || newAct;
-      setStorageItem('vov_cms_tg_activities', [serverAct, ...list]);
-      notifyStorageUpdate();
-      return res.data;
-    } catch {
-      const updated = [newAct, ...list];
-      setStorageItem('vov_cms_tg_activities', updated);
-      notifyStorageUpdate();
-      return { success: true, message: 'Activity created successfully', data: newAct };
+      const res = await supabaseClient.post('/teacher_guide_activities', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapActivityFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_activities', [tempAct, ...list]);
+        setStorageItem('vov_cms_tg_activities', [saved, ...currentList.filter(a => a.id !== tempAct.id && a.id !== saved.id)]);
+        notifyStorageUpdate();
+        return { success: true, message: 'Activity created successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase createTeacherActivity error:', err);
     }
+
+    return { success: true, message: 'Activity created successfully', data: tempAct };
   },
 
   updateTeacherActivity: async (id, data) => {
     const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
-    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? {
-      ...a,
-      ...data,
-      time: data.estimated_time !== undefined ? data.estimated_time : (a.time || a.estimated_time),
-      teacherTip: data.teacher_tip !== undefined ? data.teacher_tip : (a.teacherTip || a.teacher_tip),
-      objectives: data.objectives !== undefined ? data.objectives : a.objectives,
-      steps: data.steps !== undefined ? data.steps : a.steps
-    } : a));
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    delete patchPayload.time;
+    delete patchPayload.teacherTip;
+    if (data.objectives !== undefined) {
+      patchPayload.objectives_json = JSON.stringify(Array.isArray(data.objectives) ? data.objectives : []);
+      delete patchPayload.objectives;
+    }
+    if (data.steps !== undefined) {
+      patchPayload.steps_json = JSON.stringify(Array.isArray(data.steps) ? data.steps : []);
+      delete patchPayload.steps;
+    }
+    if (data.teacher_tip !== undefined || data.teacherTip !== undefined) {
+      patchPayload.teacher_tip = data.teacher_tip !== undefined ? data.teacher_tip : data.teacherTip;
+    }
+
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, ...data } : a));
     setStorageItem('vov_cms_tg_activities', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/teacher-guide/activities/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Activity updated successfully' };
+      const res = await supabaseClient.patch(`/teacher_guide_activities?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapActivityFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_activities', updated);
+        setStorageItem('vov_cms_tg_activities', currentList.map(a => a.id === id || a.id === Number(id) ? saved : a));
+        notifyStorageUpdate();
+        return { success: true, message: 'Activity updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateTeacherActivity error:', err);
     }
+
+    return { success: true, message: 'Activity updated successfully' };
   },
 
   deleteTeacherActivity: async (id) => {
@@ -1482,79 +1842,106 @@ export const api = {
     const updated = list.filter((a) => a.id !== id && a.id !== Number(id));
     setStorageItem('vov_cms_tg_activities', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/teacher-guide/activities/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Activity deleted successfully' };
-    }
+      await supabaseClient.delete(`/teacher_guide_activities?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Activity deleted successfully' };
   },
 
   toggleTeacherActivityPublish: async (id) => {
     const list = getStorageItem('vov_cms_tg_activities', getInitialActivities());
-    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: !a.is_published } : a));
+    const target = list.find((a) => a.id === id || a.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((a) => (a.id === id || a.id === Number(id) ? { ...a, is_published: nextStatus } : a));
     setStorageItem('vov_cms_tg_activities', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/teacher-guide/activities/${id}/toggle-publish`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Status toggled successfully' };
-    }
+      await supabaseClient.patch(`/teacher_guide_activities?id=eq.${id}`, { is_published: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
   },
 
-  // ================= TEACHER GUIDE: STRATEGIES =================
+  // ================= 17. TEACHER GUIDE STRATEGIES =================
   getAdminTeacherStrategies: async () => {
     try {
-      const res = await apiClient.get('/api/admin/teacher-guide/strategies');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_tg_strategies', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/teacher_guide_strategies?select=*&order=display_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapStrategyFromSupabase);
+        setStorageItem('vov_cms_tg_strategies', mapped);
+        return mapped;
       }
-    } catch {
-      // Fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
   },
 
   createTeacherStrategy: async (data) => {
     const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
-    const newStrat = {
-      ...data,
-      id: Date.now(),
-      num: data.strategy_number || String(list.length + 1).padStart(2, '0'),
+    const payload = {
+      strategy_number: data.strategy_number || data.num || String(list.length + 1).padStart(2, '0'),
+      title: data.title || '',
+      description: data.description || '',
+      icon: data.icon || '💡',
       display_order: Number(data.display_order) || (list.length + 1),
-      is_published: true
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
+
+    const tempStrat = mapStrategyFromSupabase({ ...payload, id: Date.now() });
+    setStorageItem('vov_cms_tg_strategies', [...list, tempStrat]);
+    notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/teacher-guide/strategies', data);
-      const serverStrat = res.data?.data || newStrat;
-      setStorageItem('vov_cms_tg_strategies', [...list, serverStrat]);
-      notifyStorageUpdate();
-      return res.data;
-    } catch {
-      const updated = [...list, newStrat];
-      setStorageItem('vov_cms_tg_strategies', updated);
-      notifyStorageUpdate();
-      return { success: true, message: 'Strategy created successfully', data: newStrat };
+      const res = await supabaseClient.post('/teacher_guide_strategies', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapStrategyFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_strategies', [...list, tempStrat]);
+        setStorageItem('vov_cms_tg_strategies', [...currentList.filter(s => s.id !== tempStrat.id && s.id !== saved.id), saved]);
+        notifyStorageUpdate();
+        return { success: true, message: 'Strategy created successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase createTeacherStrategy error:', err);
     }
+
+    return { success: true, message: 'Strategy created successfully', data: tempStrat };
   },
 
   updateTeacherStrategy: async (id, data) => {
     const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? {
-      ...s,
-      ...data,
-      num: data.strategy_number !== undefined ? data.strategy_number : (s.num || s.strategy_number)
-    } : s));
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    delete patchPayload.num;
+    if (data.num !== undefined && !data.strategy_number) {
+      patchPayload.strategy_number = data.num;
+    }
+
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, ...data } : s));
     setStorageItem('vov_cms_tg_strategies', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/teacher-guide/strategies/${id}`, data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Strategy updated successfully' };
+      const res = await supabaseClient.patch(`/teacher_guide_strategies?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapStrategyFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_strategies', updated);
+        setStorageItem('vov_cms_tg_strategies', currentList.map(s => s.id === id || s.id === Number(id) ? saved : s));
+        notifyStorageUpdate();
+        return { success: true, message: 'Strategy updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateTeacherStrategy error:', err);
     }
+
+    return { success: true, message: 'Strategy updated successfully' };
   },
 
   deleteTeacherStrategy: async (id) => {
@@ -1562,102 +1949,104 @@ export const api = {
     const updated = list.filter((s) => s.id !== id && s.id !== Number(id));
     setStorageItem('vov_cms_tg_strategies', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/teacher-guide/strategies/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Strategy deleted successfully' };
-    }
+      await supabaseClient.delete(`/teacher_guide_strategies?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Strategy deleted successfully' };
   },
 
   toggleTeacherStrategyPublish: async (id) => {
     const list = getStorageItem('vov_cms_tg_strategies', getInitialStrategies());
-    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: !s.is_published } : s));
+    const target = list.find((s) => s.id === id || s.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((s) => (s.id === id || s.id === Number(id) ? { ...s, is_published: nextStatus } : s));
     setStorageItem('vov_cms_tg_strategies', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/teacher-guide/strategies/${id}/toggle-publish`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Status toggled successfully' };
-    }
+      await supabaseClient.patch(`/teacher_guide_strategies?id=eq.${id}`, { is_published: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
   },
 
-  // ================= TEACHER GUIDE: PROMPTS =================
+  // ================= 18. TEACHER GUIDE PROMPTS =================
   getAdminTeacherPrompts: async () => {
     try {
-      const res = await apiClient.get('/api/admin/teacher-guide/prompts');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_tg_prompts', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/teacher_guide_prompts?select=*&order=display_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        const mapped = res.data.map(mapPromptFromSupabase);
+        setStorageItem('vov_cms_tg_prompts', mapped);
+        return mapped;
       }
-    } catch {
-      // Fallback below
-    }
-    const initial = getInitialPrompts();
-    const existing = getStorageItem('vov_cms_tg_prompts', null);
-    if (!existing || existing.length <= 1) {
-      const combined = existing ? [...existing] : [];
-      initial.forEach((initItem) => {
-        const already = combined.some(c => (c.prompt || '').toLowerCase().includes(initItem.prompt.toLowerCase().slice(0, 25)));
-        if (!already) {
-          combined.push(initItem);
-        }
-      });
-      setStorageItem('vov_cms_tg_prompts', combined);
-      return combined;
-    }
-    return existing;
+    } catch (_) {}
+    return getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
   },
 
   createTeacherPrompt: async (data) => {
     const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
     const cleanText = (data.prompt || '').trim().replace(/^["'\s]+|["'\s]+$/g, '');
-    const newPrompt = {
-      ...data,
+    const payload = {
       prompt: cleanText,
-      id: Date.now(),
+      category: data.category || 'General',
       display_order: Number(data.display_order) || (list.length + 1),
-      is_published: true
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
+
+    const tempPrompt = mapPromptFromSupabase({ ...payload, id: Date.now() });
+    setStorageItem('vov_cms_tg_prompts', [...list, tempPrompt]);
+    notifyStorageUpdate();
+
     try {
-      const res = await apiClient.post('/api/admin/teacher-guide/prompts', { ...data, prompt: cleanText });
-      const serverPrompt = res.data?.data || newPrompt;
-      setStorageItem('vov_cms_tg_prompts', [...list, serverPrompt]);
-      notifyStorageUpdate();
-      return res.data;
-    } catch {
-      const updated = [...list, newPrompt];
-      setStorageItem('vov_cms_tg_prompts', updated);
-      notifyStorageUpdate();
-      return { success: true, message: 'Prompt created successfully', data: newPrompt };
+      const res = await supabaseClient.post('/teacher_guide_prompts', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapPromptFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_prompts', [...list, tempPrompt]);
+        setStorageItem('vov_cms_tg_prompts', [...currentList.filter(p => p.id !== tempPrompt.id && p.id !== saved.id), saved]);
+        notifyStorageUpdate();
+        return { success: true, message: 'Prompt created successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase createTeacherPrompt error:', err);
     }
+
+    return { success: true, message: 'Prompt created successfully', data: tempPrompt };
   },
 
   updateTeacherPrompt: async (id, data) => {
     const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
-    const cleanText = data.prompt !== undefined ? data.prompt.trim().replace(/^["'\s]+|["'\s]+$/g, '') : undefined;
-    const updated = list.map((p) => {
-      if (p.id === id || p.id === Number(id)) {
-        return {
-          ...p,
-          ...data,
-          prompt: cleanText !== undefined ? cleanText : p.prompt,
-        };
-      }
-      return p;
-    });
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    if (data.prompt !== undefined) {
+      patchPayload.prompt = data.prompt.trim().replace(/^["'\s]+|["'\s]+$/g, '');
+    }
+
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, ...data } : p));
     setStorageItem('vov_cms_tg_prompts', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put(`/api/admin/teacher-guide/prompts/${id}`, {
-        ...data,
-        prompt: cleanText !== undefined ? cleanText : data.prompt
+      const res = await supabaseClient.patch(`/teacher_guide_prompts?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
       });
-      return res.data;
-    } catch {
-      return { success: true, message: 'Prompt updated successfully' };
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapPromptFromSupabase(res.data[0]);
+        const currentList = getStorageItem('vov_cms_tg_prompts', updated);
+        setStorageItem('vov_cms_tg_prompts', currentList.map(p => p.id === id || p.id === Number(id) ? saved : p));
+        notifyStorageUpdate();
+        return { success: true, message: 'Prompt updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateTeacherPrompt error:', err);
     }
+
+    return { success: true, message: 'Prompt updated successfully' };
   },
 
   deleteTeacherPrompt: async (id) => {
@@ -1665,78 +2054,77 @@ export const api = {
     const updated = list.filter((p) => p.id !== id && p.id !== Number(id));
     setStorageItem('vov_cms_tg_prompts', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.delete(`/api/admin/teacher-guide/prompts/${id}`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Prompt deleted successfully' };
-    }
+      await supabaseClient.delete(`/teacher_guide_prompts?id=eq.${id}`);
+    } catch (_) {}
+
+    return { success: true, message: 'Prompt deleted successfully' };
   },
 
   toggleTeacherPromptPublish: async (id) => {
     const list = getStorageItem('vov_cms_tg_prompts', getInitialPrompts());
-    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: !p.is_published } : p));
+    const target = list.find((p) => p.id === id || p.id === Number(id));
+    const nextStatus = target ? !target.is_published : true;
+    const updated = list.map((p) => (p.id === id || p.id === Number(id) ? { ...p, is_published: nextStatus } : p));
     setStorageItem('vov_cms_tg_prompts', updated);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.patch(`/api/admin/teacher-guide/prompts/${id}/toggle-publish`);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Status toggled successfully' };
-    }
+      await supabaseClient.patch(`/teacher_guide_prompts?id=eq.${id}`, { is_published: nextStatus });
+    } catch (_) {}
+
+    return { success: true, message: 'Status toggled successfully' };
   },
 
-  // ================= TEACHER GUIDE: LESSON PLAN TEMPLATE =================
+  // ================= 19. TEACHER GUIDE LESSON PLAN =================
   getAdminLessonPlan: async () => {
     try {
-      const res = await apiClient.get('/api/admin/teacher-guide/lesson-plan');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_tg_lessonplan', res.data.data);
-        return res.data.data;
+      const res = await supabaseClient.get('/teacher_guide_lesson_plans?select=*&limit=1');
+      if (Array.isArray(res.data) && res.data[0]) {
+        const mapped = mapLessonPlanFromSupabase(res.data[0]);
+        setStorageItem('vov_cms_tg_lessonplan', mapped);
+        return mapped;
       }
-    } catch {
-      // Fallback below
-    }
+    } catch (_) {}
     return getStorageItem('vov_cms_tg_lessonplan', getInitialLessonPlan());
   },
 
   updateLessonPlan: async (data) => {
-    const lpFields = [
-      { label: 'Topic', placeholder: data.topic || 'e.g. Local Harvests & Markets in Vehari' },
-      { label: 'Learning Objective', placeholder: data.learning_objective || 'e.g. By the end of class, students will be able to describe a market scene...' },
-      { label: 'English Skills', placeholder: data.english_skills || 'Speaking, Vocabulary, Listening, Reading' },
-      { label: 'Vocabulary', placeholder: data.vocabulary || 'e.g. stall, vendor, barter, fresh, bustling, fragrant' },
-      { label: 'Warm-up Activity', placeholder: data.warmup_activity || '5-minute photo prompt & partner brainstorming' },
-      { label: 'Main Activity', placeholder: data.main_activity || 'Contextual reading or listening from Voices of Vehari story archive' },
-      { label: 'Pair/Group Activity', placeholder: data.pair_group_activity || 'Role-play interview between local vendor and customer' },
-      { label: 'Assessment', placeholder: data.assessment || 'Formative observation of peer interaction' },
-      { label: 'Homework / Follow-up', placeholder: data.homework || 'Write a 4-sentence reflection on their favorite family custom' },
-    ];
-    const fullPlan = { ...data, fields: lpFields };
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+    delete patchPayload.fields;
+
+    const fullPlan = mapLessonPlanFromSupabase(data);
     setStorageItem('vov_cms_tg_lessonplan', fullPlan);
     notifyStorageUpdate();
+
     try {
-      const res = await apiClient.put('/api/admin/teacher-guide/lesson-plan', data);
-      return res.data;
-    } catch {
-      return { success: true, message: 'Lesson plan template updated successfully', data: fullPlan };
+      const res = await supabaseClient.patch('/teacher_guide_lesson_plans?id=eq.1', patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = mapLessonPlanFromSupabase(res.data[0]);
+        setStorageItem('vov_cms_tg_lessonplan', saved);
+        notifyStorageUpdate();
+        return { success: true, message: 'Lesson plan template updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateLessonPlan error:', err);
     }
+
+    return { success: true, message: 'Lesson plan template updated successfully', data: fullPlan };
   },
 
-  // ================= VOCABULARY =================
+  // ================= 20. VOCABULARY =================
   getAdminVocabulary: async () => {
     try {
       const res = await supabaseClient.get('/vocabulary_words?select=*&order=display_order.asc,id.asc');
       if (Array.isArray(res.data) && res.data.length > 0) {
         setStorageItem('vov_cms_vocabulary', res.data);
         return res.data;
-      }
-    } catch (_) {}
-    try {
-      const res = await apiClient.get('/api/admin/vocabulary');
-      if (res.data && res.data.data) {
-        setStorageItem('vov_cms_vocabulary', res.data.data);
-        return res.data.data;
       }
     } catch (_) {}
     return getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
@@ -1752,7 +2140,7 @@ export const api = {
       category: data.category || 'General',
       level: data.level || 'Intermediate',
       display_order: Number(data.display_order) || (list.length + 1),
-      is_published: data.is_published !== undefined ? data.is_published : true,
+      is_published: data.is_published !== undefined ? Boolean(data.is_published) : true,
     };
     const tempWord = { ...payload, id: Date.now() };
     setStorageItem('vov_cms_vocabulary', [...list, tempWord]);
@@ -1770,15 +2158,6 @@ export const api = {
         notifyStorageUpdate();
         return { success: true, data: saved, message: 'Word created successfully' };
       }
-    } catch (_) {}
-
-    try {
-      const res = await apiClient.post('/api/admin/vocabulary', data);
-      const serverWord = res.data?.data || tempWord;
-      const currentList = getStorageItem('vov_cms_vocabulary', [...list, tempWord]);
-      setStorageItem('vov_cms_vocabulary', [...currentList.filter(w => w.id !== tempWord.id && w.id !== serverWord.id), serverWord]);
-      notifyStorageUpdate();
-      return res.data;
     } catch (_) {}
 
     return { success: true, message: 'Word created successfully', data: tempWord };
@@ -1809,11 +2188,6 @@ export const api = {
       }
     } catch (_) {}
 
-    try {
-      const res = await apiClient.put(`/api/admin/vocabulary/${id}`, data);
-      return res.data;
-    } catch (_) {}
-
     return { success: true, message: 'Word updated successfully' };
   },
 
@@ -1827,10 +2201,6 @@ export const api = {
       await supabaseClient.delete(`/vocabulary_words?id=eq.${id}`);
     } catch (_) {}
 
-    try {
-      await apiClient.delete(`/api/admin/vocabulary/${id}`);
-    } catch (_) {}
-
     return { success: true, message: 'Word deleted successfully' };
   },
 
@@ -1838,7 +2208,7 @@ export const api = {
     const list = getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []);
     const target = list.find((w) => w.id === id || w.id === Number(id));
     const nextStatus = target ? !target.is_published : true;
-    const updated = list.map((w) => (w.id === id || w.id === Number(id)) ? { ...w, is_published: nextStatus } : w);
+    const updated = list.map((w) => (w.id === id || w.id === Number(id) ? { ...w, is_published: nextStatus } : w));
     setStorageItem('vov_cms_vocabulary', updated);
     notifyStorageUpdate();
 
