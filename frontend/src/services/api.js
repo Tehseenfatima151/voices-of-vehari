@@ -539,6 +539,31 @@ export const api = {
       let references = fallbackData.references || [];
       if (refsRes.status === 'fulfilled' && Array.isArray(refsRes.value.data) && refsRes.value.data.length > 0) {
         references = refsRes.value.data;
+        setStorageItem('vov_cms_references', references);
+      } else {
+        references = getStorageItem('vov_cms_references', fallbackData.references || []);
+      }
+
+      // Research Brief (from section_cards where section_group = 'research_brief')
+      let researchBrief = getStorageItem('vov_cms_research_brief', fallbackData.researchBrief);
+      const briefCard = (cardsRes.status === 'fulfilled' && Array.isArray(cardsRes.value.data))
+        ? cardsRes.value.data.find((c) => c.section_group === 'research_brief')
+        : null;
+      if (briefCard) {
+        let meta = {};
+        if (briefCard.bullets_json) {
+          try {
+            meta = typeof briefCard.bullets_json === 'string' ? JSON.parse(briefCard.bullets_json) : briefCard.bullets_json;
+          } catch (_) {}
+        }
+        researchBrief = {
+          ...fallbackData.researchBrief,
+          ...meta,
+          id: briefCard.id,
+          project_title: briefCard.title || meta.project_title || fallbackData.researchBrief.project_title,
+          lead_subtitle: briefCard.description || meta.lead_subtitle || fallbackData.researchBrief.lead_subtitle,
+        };
+        setStorageItem('vov_cms_research_brief', researchBrief);
       }
 
       // Teacher Guide parts
@@ -583,6 +608,7 @@ export const api = {
         team_by_role,
         timeline,
         references,
+        researchBrief,
         vocabulary,
         teacherGuide,
       };
@@ -606,7 +632,8 @@ export const api = {
           contributor: team.filter((m) => m.role_category === 'contributor' && m.is_active !== false),
         },
         timeline: getStorageItem('vov_cms_timeline', fallbackData.timeline),
-        references: fallbackData.references || [],
+        references: getStorageItem('vov_cms_references', fallbackData.references || []),
+        researchBrief: getStorageItem('vov_cms_research_brief', fallbackData.researchBrief),
         vocabulary: getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
         teacherGuide: buildTeacherGuidePayload(),
       };
@@ -2306,6 +2333,154 @@ export const api = {
     } catch (_) {}
 
     return { success: true, message: 'Status toggled successfully' };
+  },
+
+  // ================= 21. RESEARCH BRIEF & PAGE =================
+  getResearchBrief: async () => {
+    try {
+      const res = await supabaseClient.get('/section_cards?section_group=eq.research_brief&limit=1');
+      if (Array.isArray(res.data) && res.data[0]) {
+        const row = res.data[0];
+        let meta = {};
+        if (row.bullets_json) {
+          try {
+            meta = typeof row.bullets_json === 'string' ? JSON.parse(row.bullets_json) : row.bullets_json;
+          } catch (_) {}
+        }
+        const combined = {
+          ...fallbackData.researchBrief,
+          ...meta,
+          id: row.id,
+          project_title: row.title || meta.project_title || fallbackData.researchBrief.project_title,
+          lead_subtitle: row.description || meta.lead_subtitle || fallbackData.researchBrief.lead_subtitle,
+        };
+        setStorageItem('vov_cms_research_brief', combined);
+        return combined;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_research_brief', fallbackData.researchBrief);
+  },
+
+  updateResearchBrief: async (data) => {
+    const currentBrief = getStorageItem('vov_cms_research_brief', fallbackData.researchBrief);
+    const updated = { ...currentBrief, ...data };
+    setStorageItem('vov_cms_research_brief', updated);
+
+    const payload = {
+      section_group: 'research_brief',
+      icon: '🔬',
+      tag: 'Research',
+      title: updated.project_title || 'Voices of Vehari',
+      description: updated.lead_subtitle || '',
+      bullets_json: JSON.stringify(updated),
+      sort_order: 1,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      const checkRes = await supabaseClient.get('/section_cards?section_group=eq.research_brief&limit=1');
+      if (Array.isArray(checkRes.data) && checkRes.data[0]?.id) {
+        await supabaseClient.patch(`/section_cards?id=eq.${checkRes.data[0].id}`, payload, {
+          headers: { Prefer: 'return=representation' }
+        });
+      } else {
+        await supabaseClient.post('/section_cards', payload, {
+          headers: { Prefer: 'return=representation' }
+        });
+      }
+      notifyStorageUpdate();
+      return { success: true, message: 'Research brief updated successfully in database!' };
+    } catch (err) {
+      console.warn('Supabase updateResearchBrief error:', err);
+      notifyStorageUpdate();
+      return { success: true, message: 'Research brief saved locally' };
+    }
+  },
+
+  // ================= 22. ACADEMIC REFERENCES =================
+  getAdminReferences: async () => {
+    try {
+      const res = await supabaseClient.get('/academic_references?select=*&order=sort_order.asc,id.asc');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setStorageItem('vov_cms_references', res.data);
+        return res.data;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_references', fallbackData.references || []);
+  },
+
+  createAcademicReference: async (data) => {
+    const list = getStorageItem('vov_cms_references', fallbackData.references || []);
+    const payload = {
+      author: data.author || '',
+      contribution: data.contribution || '',
+      sort_order: Number(data.sort_order) || (list.length + 1),
+      is_active: data.is_active !== undefined ? Boolean(data.is_active) : true,
+    };
+    const tempRef = { ...payload, id: Date.now() };
+    setStorageItem('vov_cms_references', [...list, tempRef]);
+    notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.post('/academic_references', payload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = res.data[0];
+        const currentList = getStorageItem('vov_cms_references', [...list, tempRef]);
+        const updated = [...currentList.filter(r => r.id !== tempRef.id && r.id !== saved.id), saved];
+        setStorageItem('vov_cms_references', updated);
+        notifyStorageUpdate();
+        return { success: true, message: 'Reference added successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase createAcademicReference error:', err);
+    }
+    return { success: true, message: 'Reference added successfully', data: tempRef };
+  },
+
+  updateAcademicReference: async (id, data) => {
+    const list = getStorageItem('vov_cms_references', fallbackData.references || []);
+    const patchPayload = { ...data };
+    delete patchPayload.id;
+    delete patchPayload.created_at;
+    delete patchPayload.updated_at;
+
+    const updated = list.map((r) => (r.id === id || r.id === Number(id)) ? { ...r, ...data } : r);
+    setStorageItem('vov_cms_references', updated);
+    notifyStorageUpdate();
+
+    try {
+      const res = await supabaseClient.patch(`/academic_references?id=eq.${id}`, patchPayload, {
+        headers: { Prefer: 'return=representation' }
+      });
+      if (Array.isArray(res.data) && res.data[0]) {
+        const saved = res.data[0];
+        const currentList = getStorageItem('vov_cms_references', updated);
+        const serverUpdated = currentList.map((r) => (r.id === id || r.id === Number(id) ? saved : r));
+        setStorageItem('vov_cms_references', serverUpdated);
+        notifyStorageUpdate();
+        return { success: true, message: 'Reference updated successfully', data: saved };
+      }
+    } catch (err) {
+      console.warn('Supabase updateAcademicReference error:', err);
+    }
+    return { success: true, message: 'Reference updated successfully' };
+  },
+
+  deleteAcademicReference: async (id) => {
+    const list = getStorageItem('vov_cms_references', fallbackData.references || []);
+    const updated = list.filter((r) => r.id !== id && r.id !== Number(id));
+    setStorageItem('vov_cms_references', updated);
+    notifyStorageUpdate();
+
+    try {
+      await supabaseClient.delete(`/academic_references?id=eq.${id}`);
+    } catch (err) {
+      console.warn('Supabase deleteAcademicReference error:', err);
+    }
+    return { success: true, message: 'Reference deleted successfully' };
   },
 };
 

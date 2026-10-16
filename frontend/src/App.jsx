@@ -18,6 +18,7 @@ import TimelineManager from './admin/TimelineManager';
 import SubmissionsManager from './admin/SubmissionsManager';
 import MediaLibrary from './admin/MediaLibrary';
 import SettingsManager from './admin/SettingsManager';
+import ResearchManager from './admin/ResearchManager';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -59,6 +60,7 @@ export const App = () => {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="hero" element={<HeroManager />} />
+        <Route path="research" element={<ResearchManager />} />
         <Route path="podcasts" element={<PodcastsManager />} />
         <Route path="stories" element={<StoriesManager />} />
         <Route path="teacher-guide" element={<TeacherGuideManager />} />

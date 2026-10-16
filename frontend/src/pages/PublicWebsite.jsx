@@ -148,10 +148,12 @@ export const PublicWebsite = () => {
     team_by_role = {},
     timeline = [],
     references = [],
+    researchBrief = fallbackData.researchBrief,
     teacherGuide = fallbackData.teacherGuide,
     vocabulary = fallbackData.vocabulary || [],
   } = data || {};
 
+  const rb = researchBrief || fallbackData.researchBrief || {};
   const tg = teacherGuide || fallbackData.teacherGuide;
 
   const effectiveTeamByRole = (team_by_role && (team_by_role.leadership || team_by_role.mentor || team_by_role.student || team_by_role.contributor))
@@ -556,25 +558,25 @@ export const PublicWebsite = () => {
         <section className="view" id="research" style={{ display: 'block' }}>
           <section className="page-hero">
             <div className="container">
-              <span className="eyebrow" style={{ color: '#dcecff' }}>Research</span>
-              <h1>Researching technology-enhanced, culturally relevant language learning.</h1>
-              <p>A mixed-methods research project examining language outcomes and participant perspectives in a multilingual EFL setting.</p>
+              <span className="eyebrow" style={{ color: '#dcecff' }}>{rb.hero_eyebrow || 'Research'}</span>
+              <h1>{rb.hero_title || 'Researching technology-enhanced, culturally relevant language learning.'}</h1>
+              <p>{rb.hero_description || 'A mixed-methods research project examining language outcomes and participant perspectives in a multilingual EFL setting.'}</p>
             </div>
           </section>
           <section className="section">
             <div className="container two-col">
               <div>
-                <span className="eyebrow">Project brief</span>
-                <h2>Voices of Vehari</h2>
-                <p className="lead">Enhancing English Proficiency through Multilingual Podcasting and Cultural Storytelling</p>
+                <span className="eyebrow">{rb.brief_eyebrow || 'Project brief'}</span>
+                <h2>{rb.project_title || 'Voices of Vehari'}</h2>
+                <p className="lead">{rb.lead_subtitle || 'Enhancing English Proficiency through Multilingual Podcasting and Cultural Storytelling'}</p>
               </div>
               <div className="card">
-                <p><strong>Nature:</strong> Applied Basic Research</p>
-                <p><strong>Duration:</strong> 12 months</p>
-                <p><strong>Proposed start:</strong> August 2025</p>
-                <p><strong>Department:</strong> Humanities, Vehari Campus</p>
-                <p><strong>Area:</strong> Computer Assisted Language Learning and ELT</p>
-                <p><strong>Estimated / requested grant:</strong> Rs. 300,000</p>
+                <p><strong>Nature:</strong> {rb.nature || 'Applied Basic Research'}</p>
+                <p><strong>Duration:</strong> {rb.duration || '12 months'}</p>
+                <p><strong>Proposed start:</strong> {rb.proposed_start || 'August 2025'}</p>
+                <p><strong>Department:</strong> {rb.department || 'Humanities, Vehari Campus'}</p>
+                <p><strong>Area:</strong> {rb.area || 'Computer Assisted Language Learning and ELT'}</p>
+                <p><strong>Estimated / requested grant:</strong> {rb.grant_amount || 'Rs. 300,000'}</p>
               </div>
             </div>
           </section>
@@ -599,16 +601,16 @@ export const PublicWebsite = () => {
           </section>
           <section className="section">
             <div className="container">
-              <span className="eyebrow">Research design</span>
-              <h2>Mixed methods</h2>
+              <span className="eyebrow">{rb.design_eyebrow || 'Research design'}</span>
+              <h2>{rb.design_title || 'Mixed methods'}</h2>
               <div className="two-col" style={{ marginTop: '24px' }}>
                 <div className="card">
-                  <h3>Quantitative component</h3>
-                  <p>Simple language-proficiency assessments before, during and after podcast sessions, with emphasis on speaking, listening and vocabulary.</p>
+                  <h3>{rb.quantitative_title || 'Quantitative component'}</h3>
+                  <p>{rb.quantitative_description || 'Simple language-proficiency assessments before, during and after podcast sessions, with emphasis on speaking, listening and vocabulary.'}</p>
                 </div>
                 <div className="card">
-                  <h3>Qualitative component</h3>
-                  <p>Participant perspectives and experiences gathered through discussions and practice sessions to understand how learners and teachers perceive the approach.</p>
+                  <h3>{rb.qualitative_title || 'Qualitative component'}</h3>
+                  <p>{rb.qualitative_description || 'Participant perspectives and experiences gathered through discussions and practice sessions to understand how learners and teachers perceive the approach.'}</p>
                 </div>
               </div>
             </div>

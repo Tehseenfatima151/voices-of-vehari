@@ -33,6 +33,27 @@ export const fallbackData = {
     is_active: true,
   },
 
+  researchBrief: {
+    hero_eyebrow: 'Research',
+    hero_title: 'Researching technology-enhanced, culturally relevant language learning.',
+    hero_description: 'A mixed-methods research project examining language outcomes and participant perspectives in a multilingual EFL setting.',
+    brief_eyebrow: 'Project brief',
+    project_title: 'Voices of Vehari',
+    lead_subtitle: 'Enhancing English Proficiency through Multilingual Podcasting and Cultural Storytelling',
+    nature: 'Applied Basic Research',
+    duration: '12 months',
+    proposed_start: 'August 2025',
+    department: 'Humanities, Vehari Campus',
+    area: 'Computer Assisted Language Learning and ELT',
+    grant_amount: 'Rs. 300,000',
+    design_eyebrow: 'Research design',
+    design_title: 'Mixed methods',
+    quantitative_title: 'Quantitative component',
+    quantitative_description: 'Simple language-proficiency assessments before, during and after podcast sessions, with emphasis on speaking, listening and vocabulary.',
+    qualitative_title: 'Qualitative component',
+    qualitative_description: 'Participant perspectives and experiences gathered through discussions and practice sessions to understand how learners and teachers perceive the approach.',
+  },
+
   statistics: [
     { value: '12', label: 'Months of project activity', sort_order: 1 },
     { value: '20', label: 'University students in the podcast intervention', sort_order: 2 },

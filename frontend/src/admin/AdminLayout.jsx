@@ -34,6 +34,8 @@ export const AdminLayout = () => {
   const navSections = [
     { path: '/admin/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/admin/hero', icon: '🌟', label: 'Home Hero' },
+    { path: '/admin/research', icon: '🔬', label: 'Research' },
+    { path: '/admin/timeline', icon: '⏳', label: 'Methodology' },
     { path: '/admin/podcasts', icon: '🎙️', label: 'Podcasts' },
     { path: '/admin/stories', icon: '📖', label: 'Stories' },
     { path: '/admin/teacher-guide', icon: '📚', label: 'Teacher Guide' },
@@ -42,7 +44,6 @@ export const AdminLayout = () => {
     { path: '/admin/team', icon: '👥', label: 'Team Members' },
     { path: '/admin/cards', icon: '🗂️', label: 'Content Cards' },
     { path: '/admin/stats', icon: '📈', label: 'Statistics' },
-    { path: '/admin/timeline', icon: '⏳', label: 'Methodology' },
     { path: '/admin/submissions', icon: '📬', label: 'Inquiries' },
     { path: '/admin/media', icon: '📁', label: 'Media Library' },
     { path: '/admin/settings', icon: '⚙️', label: 'Site Settings' },
