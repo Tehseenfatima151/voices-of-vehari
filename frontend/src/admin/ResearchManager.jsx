@@ -301,8 +301,8 @@ export const ResearchManager = () => {
                 📌 Project Identification
               </h3>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Section Eyebrow
                 </label>
                 <input
@@ -310,14 +310,14 @@ export const ResearchManager = () => {
                   name="brief_eyebrow"
                   value={briefData.brief_eyebrow || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
                   placeholder="e.g. Project brief"
                 />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Project Title
                 </label>
                 <input
@@ -325,15 +325,15 @@ export const ResearchManager = () => {
                   name="project_title"
                   value={briefData.project_title || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700 }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '15px', fontWeight: 700 }}
                   placeholder="e.g. Voices of Vehari"
                   required
                 />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Lead Subtitle / Tagline
                 </label>
                 <textarea
@@ -341,15 +341,15 @@ export const ResearchManager = () => {
                   value={briefData.lead_subtitle || ''}
                   onChange={handleBriefChange}
                   rows={4}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
                   placeholder="e.g. Enhancing English Proficiency through Multilingual Podcasting and Cultural Storytelling"
                   required
                 />
               </div>
 
               {/* Live Preview Box */}
-              <div style={{ marginTop: '20px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+              <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' }}>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--teal)', fontWeight: 700 }}>
                   Live Preview
                 </span>
@@ -359,7 +359,7 @@ export const ResearchManager = () => {
                 <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--navy)', margin: '4px 0' }}>
                   {briefData.project_title || 'Voices of Vehari'}
                 </h4>
-                <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
+                <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
                   {briefData.lead_subtitle || 'Enhancing English Proficiency through Multilingual Podcasting and Cultural Storytelling'}
                 </p>
               </div>
@@ -371,8 +371,8 @@ export const ResearchManager = () => {
                 🏛️ Institutional & Project Metadata
               </h3>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Nature of Research
                 </label>
                 <input
@@ -380,15 +380,15 @@ export const ResearchManager = () => {
                   name="nature"
                   value={briefData.nature || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
                   placeholder="e.g. Applied Basic Research"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">
                     Duration
                   </label>
                   <input
@@ -396,13 +396,13 @@ export const ResearchManager = () => {
                     name="duration"
                     value={briefData.duration || ''}
                     onChange={handleBriefChange}
-                    className="input"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    className="form-control"
+                    style={{ fontFamily: 'inherit', fontSize: '14px' }}
                     placeholder="e.g. 12 months"
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+                <div className="form-group">
+                  <label className="form-label">
                     Proposed Start
                   </label>
                   <input
@@ -410,15 +410,15 @@ export const ResearchManager = () => {
                     name="proposed_start"
                     value={briefData.proposed_start || ''}
                     onChange={handleBriefChange}
-                    className="input"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    className="form-control"
+                    style={{ fontFamily: 'inherit', fontSize: '14px' }}
                     placeholder="e.g. August 2025"
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Department / Campus
                 </label>
                 <input
@@ -426,14 +426,14 @@ export const ResearchManager = () => {
                   name="department"
                   value={briefData.department || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
                   placeholder="e.g. Humanities, Vehari Campus"
                 />
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Research Area / Field
                 </label>
                 <input
@@ -441,14 +441,14 @@ export const ResearchManager = () => {
                   name="area"
                   value={briefData.area || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
                   placeholder="e.g. Computer Assisted Language Learning and ELT"
                 />
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Estimated / Requested Grant
                 </label>
                 <input
@@ -456,8 +456,8 @@ export const ResearchManager = () => {
                   name="grant_amount"
                   value={briefData.grant_amount || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700, color: '#0d9488' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '15px', fontWeight: 700, color: '#0d9488' }}
                   placeholder="e.g. Rs. 300,000"
                 />
               </div>
@@ -488,8 +488,8 @@ export const ResearchManager = () => {
                 🌟 Research Page Hero Banner
               </h3>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Hero Eyebrow
                 </label>
                 <input
@@ -497,14 +497,14 @@ export const ResearchManager = () => {
                   name="hero_eyebrow"
                   value={briefData.hero_eyebrow || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
                   placeholder="e.g. Research"
                 />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Hero Headline / Title
                 </label>
                 <input
@@ -512,14 +512,14 @@ export const ResearchManager = () => {
                   name="hero_title"
                   value={briefData.hero_title || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700 }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '15px', fontWeight: 700 }}
                   placeholder="e.g. Researching technology-enhanced, culturally relevant language learning."
                 />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Hero Subtitle / Description
                 </label>
                 <textarea
@@ -527,8 +527,8 @@ export const ResearchManager = () => {
                   value={briefData.hero_description || ''}
                   onChange={handleBriefChange}
                   rows={4}
-                  className="input"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
                   placeholder="e.g. A mixed-methods research project examining language outcomes and participant perspectives..."
                 />
               </div>
@@ -540,9 +540,9 @@ export const ResearchManager = () => {
                 🔬 Research Design (Mixed Methods)
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">
                     Design Eyebrow
                   </label>
                   <input
@@ -550,13 +550,13 @@ export const ResearchManager = () => {
                     name="design_eyebrow"
                     value={briefData.design_eyebrow || ''}
                     onChange={handleBriefChange}
-                    className="input"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                    className="form-control"
+                    style={{ fontFamily: 'inherit', fontSize: '14px' }}
                     placeholder="e.g. Research design"
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+                <div className="form-group">
+                  <label className="form-label">
                     Design Heading
                   </label>
                   <input
@@ -564,15 +564,15 @@ export const ResearchManager = () => {
                     name="design_title"
                     value={briefData.design_title || ''}
                     onChange={handleBriefChange}
-                    className="input"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 700 }}
+                    className="form-control"
+                    style={{ fontFamily: 'inherit', fontSize: '15px', fontWeight: 700 }}
                     placeholder="e.g. Mixed methods"
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Quantitative Component Title & Description
                 </label>
                 <input
@@ -580,8 +580,8 @@ export const ResearchManager = () => {
                   name="quantitative_title"
                   value={briefData.quantitative_title || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 600, marginBottom: '6px' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}
                   placeholder="e.g. Quantitative component"
                 />
                 <textarea
@@ -589,14 +589,14 @@ export const ResearchManager = () => {
                   value={briefData.quantitative_description || ''}
                   onChange={handleBriefChange}
                   rows={3}
-                  className="input"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
                   placeholder="Description of quantitative assessments..."
                 />
               </div>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
+              <div className="form-group">
+                <label className="form-label">
                   Qualitative Component Title & Description
                 </label>
                 <input
@@ -604,8 +604,8 @@ export const ResearchManager = () => {
                   name="qualitative_title"
                   value={briefData.qualitative_title || ''}
                   onChange={handleBriefChange}
-                  className="input"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontWeight: 600, marginBottom: '6px' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}
                   placeholder="e.g. Qualitative component"
                 />
                 <textarea
@@ -613,8 +613,8 @@ export const ResearchManager = () => {
                   value={briefData.qualitative_description || ''}
                   onChange={handleBriefChange}
                   rows={3}
-                  className="input"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                  className="form-control"
+                  style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
                   placeholder="Description of qualitative perspectives..."
                 />
               </div>
@@ -655,11 +655,12 @@ export const ResearchManager = () => {
                 style={{
                   padding: '20px',
                   background: '#fff',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   border: '1px solid #e2e8f0',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
                 <div>
@@ -667,14 +668,14 @@ export const ResearchManager = () => {
                     <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--teal)' }}>
                       {obj.icon || '🎯'}
                     </span>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)', background: '#f1f5f9', padding: '3px 8px', borderRadius: '4px' }}>
                       Order: {obj.sort_order}
                     </span>
                   </div>
                   <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--navy)', margin: '0 0 8px' }}>
                     {obj.title}
                   </h4>
-                  <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: '1.5', margin: 0 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: '1.6', margin: 0 }}>
                     {obj.description}
                   </p>
                 </div>
@@ -682,14 +683,14 @@ export const ResearchManager = () => {
                   <button
                     onClick={() => handleOpenEditObj(obj)}
                     className="btn btn-secondary"
-                    style={{ flex: 1, padding: '6px', fontSize: '12px' }}
+                    style={{ flex: 1, padding: '8px', fontSize: '13px' }}
                   >
                     ✏️ Edit
                   </button>
                   <button
                     onClick={() => handleDeleteObj(obj.id)}
                     className="btn btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '12px', color: '#ef4444', borderColor: '#fca5a5' }}
+                    style={{ padding: '8px 12px', fontSize: '13px', color: '#ef4444', borderColor: '#fca5a5' }}
                   >
                     🗑️
                   </button>
@@ -698,71 +699,84 @@ export const ResearchManager = () => {
             ))}
           </div>
 
-          {/* Modal for Objective Add/Edit */}
+          {/* Centered Modal Popup for Objective Add/Edit */}
           {objModalOpen && (
-            <div className="modal-backdrop">
-              <div className="modal" style={{ maxWidth: '480px' }}>
+            <div className="modal-overlay" onClick={() => setObjModalOpen(false)}>
+              <div className="modal-box" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                  <h3>{editingObjId ? 'Edit Research Objective' : 'New Research Objective'}</h3>
-                  <button onClick={() => setObjModalOpen(false)}>✕</button>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--navy)', fontWeight: 700 }}>
+                    {editingObjId ? 'Edit Research Objective' : 'New Research Objective'}
+                  </h3>
+                  <button
+                    style={{ border: 0, background: 'transparent', cursor: 'pointer', fontSize: '20px', color: 'var(--muted)' }}
+                    onClick={() => setObjModalOpen(false)}
+                  >
+                    ✕
+                  </button>
                 </div>
-                <form onSubmit={handleSaveObj} className="modal-body">
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Icon / Number Label (e.g. 01, 02)
-                    </label>
-                    <input
-                      type="text"
-                      value={objForm.icon}
-                      onChange={(e) => setObjForm({ ...objForm, icon: e.target.value })}
-                      className="input"
-                      placeholder="01"
-                      required
-                    />
+                <form onSubmit={handleSaveObj}>
+                  <div className="modal-body">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Icon / Number Label (e.g. 01, 02)
+                      </label>
+                      <input
+                        type="text"
+                        value={objForm.icon}
+                        onChange={(e) => setObjForm({ ...objForm, icon: e.target.value })}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px' }}
+                        placeholder="01"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Objective Title
+                      </label>
+                      <input
+                        type="text"
+                        value={objForm.title}
+                        onChange={(e) => setObjForm({ ...objForm, title: e.target.value })}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px', fontWeight: 600 }}
+                        placeholder="e.g. Listening & speaking"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Description
+                      </label>
+                      <textarea
+                        value={objForm.description}
+                        onChange={(e) => setObjForm({ ...objForm, description: e.target.value })}
+                        rows={4}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
+                        placeholder="Assess the impact of multilingual podcasting..."
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Sort Order
+                      </label>
+                      <input
+                        type="number"
+                        value={objForm.sort_order}
+                        onChange={(e) => setObjForm({ ...objForm, sort_order: Number(e.target.value) })}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px' }}
+                        min={1}
+                      />
+                    </div>
                   </div>
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Objective Title
-                    </label>
-                    <input
-                      type="text"
-                      value={objForm.title}
-                      onChange={(e) => setObjForm({ ...objForm, title: e.target.value })}
-                      className="input"
-                      placeholder="e.g. Listening & speaking"
-                      required
-                    />
-                  </div>
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Description
-                    </label>
-                    <textarea
-                      value={objForm.description}
-                      onChange={(e) => setObjForm({ ...objForm, description: e.target.value })}
-                      rows={4}
-                      className="input"
-                      placeholder="Assess the impact of multilingual podcasting..."
-                      required
-                    />
-                  </div>
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Sort Order
-                    </label>
-                    <input
-                      type="number"
-                      value={objForm.sort_order}
-                      onChange={(e) => setObjForm({ ...objForm, sort_order: Number(e.target.value) })}
-                      className="input"
-                      min={1}
-                    />
-                  </div>
-                  <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                    <button type="button" onClick={() => setObjModalOpen(false)} className="btn btn-secondary">
+                  <div className="modal-footer">
+                    <button type="button" onClick={() => setObjModalOpen(false)} className="btn ghost sm">
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn primary sm">
                       {editingObjId ? 'Save Changes' : 'Create Objective'}
                     </button>
                   </div>
@@ -790,34 +804,34 @@ export const ResearchManager = () => {
             </button>
           </div>
 
-          <div className="table-wrap" style={{ background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div className="table-wrap" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <tr>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '25%' }}>Author & Year</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Contribution to Project Context</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '80px' }}>Order</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '120px' }}>Actions</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '25%' }}>Author & Year</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: 'var(--navy)' }}>Contribution to Project Context</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '80px' }}>Order</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'right', fontSize: '13px', fontWeight: 700, color: 'var(--navy)', width: '120px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {references.map((r) => (
                   <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--navy)', fontSize: '14px' }}>
+                    <td style={{ padding: '14px 18px', fontWeight: 700, color: 'var(--navy)', fontSize: '14px' }}>
                       {r.author}
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--muted)', fontSize: '13px', lineHeight: '1.5' }}>
+                    <td style={{ padding: '14px 18px', color: 'var(--muted)', fontSize: '13px', lineHeight: '1.6' }}>
                       {r.contribution}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '12px', color: 'var(--muted)' }}>
+                    <td style={{ padding: '14px 18px', textAlign: 'center', fontSize: '13px', color: 'var(--muted)' }}>
                       {r.sort_order}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                    <td style={{ padding: '14px 18px', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
                         <button
                           onClick={() => handleOpenEditRef(r)}
                           className="btn btn-secondary"
-                          style={{ padding: '4px 8px', fontSize: '12px' }}
+                          style={{ padding: '6px 10px', fontSize: '13px' }}
                           title="Edit Reference"
                         >
                           ✏️
@@ -828,7 +842,7 @@ export const ResearchManager = () => {
                             setDeleteModalOpen(true);
                           }}
                           className="btn btn-secondary"
-                          style={{ padding: '4px 8px', fontSize: '12px', color: '#ef4444', borderColor: '#fca5a5' }}
+                          style={{ padding: '6px 10px', fontSize: '13px', color: '#ef4444', borderColor: '#fca5a5' }}
                           title="Delete Reference"
                         >
                           🗑️
@@ -841,58 +855,70 @@ export const ResearchManager = () => {
             </table>
           </div>
 
-          {/* Reference Modal */}
+          {/* Centered Modal Popup for Reference Add/Edit */}
           {refModalOpen && (
-            <div className="modal-backdrop">
-              <div className="modal" style={{ maxWidth: '520px' }}>
+            <div className="modal-overlay" onClick={() => setRefModalOpen(false)}>
+              <div className="modal-box" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                  <h3>{editingRefId ? 'Edit Academic Reference' : 'New Academic Reference'}</h3>
-                  <button onClick={() => setRefModalOpen(false)}>✕</button>
+                  <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--navy)', fontWeight: 700 }}>
+                    {editingRefId ? 'Edit Academic Reference' : 'New Academic Reference'}
+                  </h3>
+                  <button
+                    style={{ border: 0, background: 'transparent', cursor: 'pointer', fontSize: '20px', color: 'var(--muted)' }}
+                    onClick={() => setRefModalOpen(false)}
+                  >
+                    ✕
+                  </button>
                 </div>
-                <form onSubmit={handleSaveRef} className="modal-body">
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Author & Citation (e.g. Rosell-Aguilar (2013))
-                    </label>
-                    <input
-                      type="text"
-                      value={refForm.author}
-                      onChange={(e) => setRefForm({ ...refForm, author: e.target.value })}
-                      className="input"
-                      placeholder="e.g. Creese & Blackledge (2010)"
-                      required
-                    />
+                <form onSubmit={handleSaveRef}>
+                  <div className="modal-body">
+                    <div className="form-group">
+                      <label className="form-label">
+                        Author & Citation (e.g. Rosell-Aguilar (2013))
+                      </label>
+                      <input
+                        type="text"
+                        value={refForm.author}
+                        onChange={(e) => setRefForm({ ...refForm, author: e.target.value })}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px', fontWeight: 600 }}
+                        placeholder="e.g. Creese & Blackledge (2010)"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Contribution to Project Context
+                      </label>
+                      <textarea
+                        value={refForm.contribution}
+                        onChange={(e) => setRefForm({ ...refForm, contribution: e.target.value })}
+                        rows={4}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.6, resize: 'vertical' }}
+                        placeholder="e.g. Translanguaging as a pedagogy for multilingual classrooms."
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Sort Order
+                      </label>
+                      <input
+                        type="number"
+                        value={refForm.sort_order}
+                        onChange={(e) => setRefForm({ ...refForm, sort_order: Number(e.target.value) })}
+                        className="form-control"
+                        style={{ fontFamily: 'inherit', fontSize: '14px' }}
+                        min={1}
+                      />
+                    </div>
                   </div>
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Contribution to Project Context
-                    </label>
-                    <textarea
-                      value={refForm.contribution}
-                      onChange={(e) => setRefForm({ ...refForm, contribution: e.target.value })}
-                      rows={4}
-                      className="input"
-                      placeholder="e.g. Translanguaging as a pedagogy for multilingual classrooms."
-                      required
-                    />
-                  </div>
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--navy)', marginBottom: '6px' }}>
-                      Sort Order
-                    </label>
-                    <input
-                      type="number"
-                      value={refForm.sort_order}
-                      onChange={(e) => setRefForm({ ...refForm, sort_order: Number(e.target.value) })}
-                      className="input"
-                      min={1}
-                    />
-                  </div>
-                  <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                    <button type="button" onClick={() => setRefModalOpen(false)} className="btn btn-secondary">
+                  <div className="modal-footer">
+                    <button type="button" onClick={() => setRefModalOpen(false)} className="btn ghost sm">
                       Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
+                    <button type="submit" className="btn primary sm">
                       {editingRefId ? 'Save Changes' : 'Create Reference'}
                     </button>
                   </div>
