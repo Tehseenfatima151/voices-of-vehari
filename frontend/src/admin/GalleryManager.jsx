@@ -72,13 +72,17 @@ export const GalleryManager = () => {
         ...formData,
         image_url: formatImageUrl(formData.image_url),
       };
-      await api.createGalleryItem(payload);
-      addToast('Image added to gallery!', 'success');
-      setModalOpen(false);
-      setFormData({ title: '', caption: '', category: 'general', image_url: '', alt_text: '' });
-      loadGallery();
+      const res = await api.createGalleryItem(payload);
+      if (res && res.success) {
+        addToast('Image added to gallery!', 'success');
+        setModalOpen(false);
+        setFormData({ title: '', caption: '', category: 'general', image_url: '', alt_text: '' });
+        loadGallery();
+      } else {
+        addToast(res?.message || 'Failed to save gallery item', 'error');
+      }
     } catch (err) {
-      addToast('Failed to save gallery item', 'error');
+      addToast(err?.message || 'Failed to save gallery item', 'error');
     }
   };
 

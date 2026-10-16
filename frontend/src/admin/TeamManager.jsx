@@ -114,17 +114,21 @@ export const TeamManager = () => {
         ...formData,
         image_url: formatImageUrl(formData.image_url),
       };
+      let res;
       if (editingId) {
-        await api.updateTeamMember(editingId, payload);
-        addToast('Team member updated', 'success');
+        res = await api.updateTeamMember(editingId, payload);
       } else {
-        await api.createTeamMember(payload);
-        addToast('Team member added', 'success');
+        res = await api.createTeamMember(payload);
       }
-      setModalOpen(false);
-      loadTeam();
+      if (res && res.success) {
+        addToast(editingId ? 'Team member updated' : 'Team member added', 'success');
+        setModalOpen(false);
+        loadTeam();
+      } else {
+        addToast(res?.message || 'Failed to save team member to database', 'error');
+      }
     } catch (err) {
-      addToast(err.response?.data?.message || 'Error saving team member', 'error');
+      addToast(err.response?.data?.message || err.message || 'Error saving team member', 'error');
     }
   };
 

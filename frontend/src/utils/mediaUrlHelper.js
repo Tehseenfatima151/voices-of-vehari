@@ -181,8 +181,8 @@ export const compressImageFile = (file, maxWidth = 1000, quality = 0.8) => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const dataUrl = canvas.toDataURL(mime, quality);
+        // Convert all images (including PNG screenshots) to compressed JPEG to keep size tiny (~25-45KB)
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);
       };
       img.onerror = () => resolve(e.target.result || '');

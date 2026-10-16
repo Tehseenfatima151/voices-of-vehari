@@ -48,10 +48,13 @@ export default async function handler(req, res) {
     }
 
     // 1. Upload to Catbox (Permanent CDN with standard browser User-Agent)
+    let debugInfo = {};
     try {
+      const uint8 = new Uint8Array(buffer);
+      const blob = new Blob([uint8], { type: mimeType });
       const fd = new FormData();
       fd.append('reqtype', 'fileupload');
-      fd.append('fileToUpload', new Blob([buffer], { type: mimeType }), fileName);
+      fd.append('fileToUpload', blob, fileName);
 
       const catboxRes = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
@@ -61,25 +64,28 @@ export default async function handler(req, res) {
         }
       });
 
-      if (catboxRes.ok) {
-        const directUrl = (await catboxRes.text()).trim();
-        if (directUrl && directUrl.startsWith('http')) {
-          return res.status(200).json({
-            success: true,
-            url: directUrl,
-            message: 'Uploaded successfully'
-          });
-        }
+      debugInfo.status = catboxRes.status;
+      const directUrl = (await catboxRes.text()).trim();
+      debugInfo.response = directUrl;
+
+      if (catboxRes.ok && directUrl.startsWith('http')) {
+        return res.status(200).json({
+          success: true,
+          url: directUrl,
+          message: 'Uploaded successfully'
+        });
       }
     } catch (catboxErr) {
+      debugInfo.error = catboxErr.message || String(catboxErr);
       console.warn('Catbox upload attempt failed, falling back to data URL:', catboxErr);
     }
 
-    // 2. Direct Data URL fallback (Guaranteed to work 100% in all browsers without third-party reliance)
+    // 2. Direct Data URL fallback
     return res.status(200).json({
       success: true,
       url: rawBase64,
       isBase64: true,
+      debugCatbox: debugInfo,
       message: 'Image processed successfully'
     });
   } catch (err) {
