@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { formatImageUrl } from '../utils/mediaUrlHelper';
 
 export const MediaLibrary = () => {
   const [files, setFiles] = useState([]);
@@ -116,9 +117,11 @@ export const MediaLibrary = () => {
             <div key={f.id} className="admin-card" style={{ padding: '14px' }}>
               {f.file_type === 'image' ? (
                 <img
-                  src={f.public_url}
+                  src={formatImageUrl(f.public_url)}
                   alt={f.alt_text || f.original_name}
+                  referrerPolicy="no-referrer"
                   style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginBottom: '10px' }}
+                  onError={(e) => { e.target.src = '/assets/gallery_poster.jpeg'; }}
                 />
               ) : (
                 <div style={{ height: '140px', background: '#eef6fb', borderRadius: '10px', display: 'grid', placeItems: 'center', marginBottom: '10px', color: 'var(--teal)', fontSize: '32px' }}>

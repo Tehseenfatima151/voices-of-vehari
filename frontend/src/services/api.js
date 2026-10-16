@@ -1,5 +1,19 @@
 import axios from 'axios';
 import fallbackData from './fallbackData';
+import { setMediaCache, compressImageFile } from '../utils/mediaUrlHelper';
+
+const resolveMediaReference = async (url) => {
+  if (!url || typeof url !== 'string' || !url.startsWith('media:')) return url;
+  const id = url.replace('media:', '');
+  try {
+    const res = await supabaseClient.get(`/media_files?id=eq.${id}&select=id,public_url`);
+    if (Array.isArray(res.data) && res.data[0]?.public_url) {
+      setMediaCache([res.data[0]]);
+      return res.data[0].public_url;
+    }
+  } catch (_) {}
+  return url;
+};
 
 // Base API URL from Vite environment variable or proxy fallback
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -798,8 +812,12 @@ export const api = {
     try {
       const res = await supabaseClient.get('/site_settings?select=*&limit=1');
       if (Array.isArray(res.data) && res.data[0]) {
-        setStorageItem('vov_cms_settings', res.data[0]);
-        return res.data[0];
+        const item = { ...res.data[0] };
+        if (item.logo_url && item.logo_url.startsWith('media:')) {
+          item.logo_url = await resolveMediaReference(item.logo_url);
+        }
+        setStorageItem('vov_cms_settings', item);
+        return item;
       }
     } catch (_) {}
     return getStorageItem('vov_cms_settings', fallbackData.settings);
@@ -811,10 +829,18 @@ export const api = {
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
 
-    // Sanitize VARCHAR(255) columns
+    // Handle VARCHAR(255) column for logo_url
     if (patchPayload.logo_url && patchPayload.logo_url.length > 255) {
-      console.warn('logo_url exceeds 255 chars, removing from patch to avoid DB error');
-      delete patchPayload.logo_url;
+      try {
+        const uploadRes = await api.uploadMedia(patchPayload.logo_url, 'Site Logo');
+        if (uploadRes?.data?.id) {
+          patchPayload.logo_url = `media:${uploadRes.data.id}`;
+        } else {
+          delete patchPayload.logo_url;
+        }
+      } catch (_) {
+        delete patchPayload.logo_url;
+      }
     }
 
     setStorageItem('vov_cms_settings', { ...data, id: 1 });
@@ -841,8 +867,15 @@ export const api = {
     try {
       const res = await supabaseClient.get('/hero_sections?select=*&limit=1');
       if (Array.isArray(res.data) && res.data[0]) {
-        setStorageItem('vov_cms_hero', res.data[0]);
-        return res.data[0];
+        const item = { ...res.data[0] };
+        if (item.hero_image_url && item.hero_image_url.startsWith('media:')) {
+          item.hero_image_url = await resolveMediaReference(item.hero_image_url);
+        }
+        if (item.logo_float_url && item.logo_float_url.startsWith('media:')) {
+          item.logo_float_url = await resolveMediaReference(item.logo_float_url);
+        }
+        setStorageItem('vov_cms_hero', item);
+        return item;
       }
     } catch (_) {}
     return getStorageItem('vov_cms_hero', fallbackData.hero);
@@ -854,14 +887,30 @@ export const api = {
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
 
-    // Sanitize VARCHAR(255) columns to avoid 22001 DB error
+    // Handle VARCHAR(255) columns to avoid 22001 DB error by saving as media:ID
     if (patchPayload.hero_image_url && patchPayload.hero_image_url.length > 255) {
-      console.warn('hero_image_url exceeds 255 chars, removing from patch to avoid DB error');
-      delete patchPayload.hero_image_url;
+      try {
+        const uploadRes = await api.uploadMedia(patchPayload.hero_image_url, 'Hero Artwork');
+        if (uploadRes?.data?.id) {
+          patchPayload.hero_image_url = `media:${uploadRes.data.id}`;
+        } else {
+          delete patchPayload.hero_image_url;
+        }
+      } catch (_) {
+        delete patchPayload.hero_image_url;
+      }
     }
     if (patchPayload.logo_float_url && patchPayload.logo_float_url.length > 255) {
-      console.warn('logo_float_url exceeds 255 chars, removing from patch to avoid DB error');
-      delete patchPayload.logo_float_url;
+      try {
+        const uploadRes = await api.uploadMedia(patchPayload.logo_float_url, 'Floating Logo');
+        if (uploadRes?.data?.id) {
+          patchPayload.logo_float_url = `media:${uploadRes.data.id}`;
+        } else {
+          delete patchPayload.logo_float_url;
+        }
+      } catch (_) {
+        delete patchPayload.logo_float_url;
+      }
     }
 
     setStorageItem('vov_cms_hero', { ...data, id: 1 });
@@ -1580,21 +1629,17 @@ export const api = {
   // ================= 14. MEDIA LIBRARY & UPLOADS =================
   uploadMedia: async (file, altText = '') => {
     try {
-      const toBase64 = (f) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(f);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (e) => reject(e);
-        });
-
       let publicUrl = '';
       let base64Data = '';
-      if (file && typeof file === 'object' && typeof FileReader !== 'undefined') {
-        base64Data = await toBase64(file);
+
+      // 1. Client-side compression for images
+      if (file && typeof file === 'object') {
+        base64Data = await compressImageFile(file, 1000, 0.82);
+      } else if (typeof file === 'string') {
+        base64Data = file;
       }
 
-      // 1. Primary: Serverless /api/upload (Node.js backend proxying to permanent CDN)
+      // 2. Try serverless /api/upload
       if (base64Data) {
         try {
           const uploadRes = await fetch('/api/upload', {
@@ -1608,36 +1653,18 @@ export const api = {
           });
           if (uploadRes.ok) {
             const uploadJson = await uploadRes.json();
-            if (uploadJson.success && uploadJson.url) {
+            if (uploadJson.success && uploadJson.url && !uploadJson.isBase64) {
               publicUrl = uploadJson.url;
             }
           }
         } catch (serverlessErr) {
-          console.warn('/api/upload endpoint not reachable, trying client fallback:', serverlessErr);
+          console.warn('/api/upload endpoint not reachable:', serverlessErr);
         }
       }
 
-      // 2. Secondary client fallback (tmpfiles.org)
-      if (!publicUrl && file && typeof file === 'object') {
-        try {
-          const fd = new FormData();
-          fd.append('file', file);
-          const tmpRes = await fetch('https://tmpfiles.org/api/v1/upload', {
-            method: 'POST',
-            body: fd
-          });
-          if (tmpRes.ok) {
-            const tmpData = await tmpRes.json();
-            if (tmpData?.data?.url) {
-              publicUrl = tmpData.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-          }
-        } catch (_) {}
-      }
-
-      // 3. Fallback: if external upload fails, use base64
+      // 3. If external host not reachable, use self-contained compressed base64
       if (!publicUrl) {
-        publicUrl = base64Data || (typeof file === 'string' ? file : '');
+        publicUrl = base64Data;
       }
 
       const mediaRecord = {
@@ -1645,8 +1672,8 @@ export const api = {
         original_name: file.name || 'file',
         file_type: (file.type && file.type.startsWith('image/')) ? 'image' : ((file.type && file.type.startsWith('audio/')) ? 'audio' : 'document'),
         mime_type: file.type || 'application/octet-stream',
-        file_size: file.size || 0,
-        file_path: publicUrl.slice(0, 250),
+        file_size: file.size || (publicUrl ? publicUrl.length : 0),
+        file_path: (file.name || 'upload').slice(0, 250),
         public_url: publicUrl,
         alt_text: altText || file.name || '',
       };
@@ -1656,15 +1683,28 @@ export const api = {
           headers: { Prefer: 'return=representation' }
         });
         if (Array.isArray(res.data) && res.data[0]) {
-          return { success: true, message: 'Media uploaded successfully', data: res.data[0], file: res.data[0] };
+          const savedItem = res.data[0];
+          setMediaCache([savedItem]);
+          const currentMedia = getStorageItem('vov_cms_media', []);
+          setStorageItem('vov_cms_media', [savedItem, ...currentMedia.filter(m => m.id !== savedItem.id)]);
+          notifyStorageUpdate();
+          return { success: true, message: 'Media uploaded successfully', data: savedItem, file: savedItem };
         }
-      } catch (_) {}
+      } catch (dbErr) {
+        console.warn('Supabase media_files save error:', dbErr);
+      }
+
+      const fallbackItem = { ...mediaRecord, id: Date.now() };
+      setMediaCache([fallbackItem]);
+      const currentMedia = getStorageItem('vov_cms_media', []);
+      setStorageItem('vov_cms_media', [fallbackItem, ...currentMedia]);
+      notifyStorageUpdate();
 
       return {
         success: true,
         message: 'Media uploaded successfully',
-        data: { ...mediaRecord, id: Date.now() },
-        file: { ...mediaRecord, id: Date.now() }
+        data: fallbackItem,
+        file: fallbackItem
       };
     } catch (err) {
       return { success: false, message: err.message || 'Upload failed' };

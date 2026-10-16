@@ -10,13 +10,29 @@
  * - https://drive.google.com/uc?export=view&id=FILE_ID
  * - https://lh3.googleusercontent.com/d/FILE_ID
  */
+/**
+ * Checks if a given URL is a Google Drive link.
+ */
+export const isGoogleDriveUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/') || trimmed.startsWith('file:')) {
+    return false;
+  }
+  return /drive\.google\.com|googleusercontent\.com|docs\.google\.com/.test(trimmed);
+};
+
 export const extractGoogleDriveId = (url) => {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
 
-  // Raw Google Drive ID (typically 25-45 chars of base64url characters)
-  if (/^[a-zA-Z0-9_-]{25,45}$/.test(trimmed)) {
-    return trimmed;
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/') || trimmed.startsWith('file:')) {
+    return null;
+  }
+
+  // Must be a Google domain to extract drive ID
+  if (!isGoogleDriveUrl(trimmed)) {
+    return null;
   }
 
   // /file/d/FILE_ID or /d/FILE_ID
@@ -28,14 +44,6 @@ export const extractGoogleDriveId = (url) => {
   if (matchId && matchId[1]) return matchId[1];
 
   return null;
-};
-
-/**
- * Checks if a given URL is a Google Drive link or ID.
- */
-export const isGoogleDriveUrl = (url) => {
-  if (!url || typeof url !== 'string') return false;
-  return /drive\.google\.com|googleusercontent\.com/.test(url) || !!extractGoogleDriveId(url);
 };
 
 /**
@@ -127,17 +135,98 @@ export const getYouTubeEmbedUrl = (url) => {
   return null;
 };
 
+// In-memory cache for media items
+let mediaCache = {};
+
+export const setMediaCache = (items) => {
+  if (Array.isArray(items)) {
+    items.forEach((item) => {
+      if (item && item.id && item.public_url) {
+        mediaCache[String(item.id)] = item.public_url;
+        mediaCache[`media:${item.id}`] = item.public_url;
+      }
+    });
+  }
+};
+
+/**
+ * Client-side Canvas image compressor.
+ * Downscales images to suitable dimensions (maxWidth) and compresses quality,
+ * resulting in lightweight WebP or JPEG (~20KB - 60KB).
+ */
+export const compressImageFile = (file, maxWidth = 1000, quality = 0.8) => {
+  return new Promise((resolve) => {
+    if (!file || typeof file !== 'object' || !file.type || !file.type.startsWith('image/')) {
+      if (typeof file === 'string') return resolve(file);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mime, quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target.result || '');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
+
 /**
  * General purpose formatter for image URLs.
- * If given a Google Drive link, converts to direct image URL.
- * Otherwise returns original URL.
+ * Resolves media:id, Google Drive links, and direct URLs.
  */
 export const formatImageUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
-  if (isGoogleDriveUrl(url)) {
-    return getGoogleDriveImageUrl(url);
+  const trimmed = url.trim();
+
+  // If it's a media reference (media:12)
+  if (trimmed.startsWith('media:')) {
+    if (mediaCache[trimmed]) return mediaCache[trimmed];
+    const id = trimmed.replace('media:', '');
+    if (mediaCache[id]) return mediaCache[id];
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('vov_cms_media');
+        if (raw) {
+          const list = JSON.parse(raw);
+          const found = list.find((m) => String(m.id) === id);
+          if (found && found.public_url) {
+            mediaCache[trimmed] = found.public_url;
+            return found.public_url;
+          }
+        }
+      } catch (_) {}
+    }
+    return trimmed;
   }
-  return url;
+
+  if (isGoogleDriveUrl(trimmed)) {
+    return getGoogleDriveImageUrl(trimmed);
+  }
+  return trimmed;
 };
 
 /**

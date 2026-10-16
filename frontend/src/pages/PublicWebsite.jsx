@@ -46,6 +46,38 @@ const getInitialSiteData = () => {
   }
 };
 
+const TeamAvatar = ({ member, fallbackInitials = 'TM' }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const initials = member?.initials || member?.name?.slice(0, 2).toUpperCase() || fallbackInitials;
+  const imageUrl = member?.image_url;
+
+  return (
+    <div style={{ position: 'relative', width: '58px', height: '58px', borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+      <div className="avatar" style={{ width: '100%', height: '100%' }}>
+        {initials}
+      </div>
+      {imageUrl && !imgFailed && (
+        <img
+          src={formatImageUrl(imageUrl)}
+          alt={member?.name || 'Team member'}
+          className="avatar"
+          referrerPolicy="no-referrer"
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={(e) => {
+            const driveId = extractGoogleDriveId(imageUrl);
+            if (driveId && !e.target.dataset.triedFallback) {
+              e.target.dataset.triedFallback = 'true';
+              e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
+              return;
+            }
+            setImgFailed(true);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 export const PublicWebsite = () => {
   // Initialize with latest storage data immediately so there is zero flicker or stale data
   const [data, setData] = useState(getInitialSiteData);
@@ -1452,26 +1484,7 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(effectiveTeamByRole.leadership || []).map((m) => (
                   <div key={m.id} className="person">
-                    {m.image_url ? (
-                      <img
-                        src={formatImageUrl(m.image_url)}
-                        alt={m.name}
-                        className="avatar"
-                        referrerPolicy="no-referrer"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          const driveId = extractGoogleDriveId(m.image_url);
-                          if (driveId && !e.target.dataset.triedFallback) {
-                            e.target.dataset.triedFallback = 'true';
-                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
-                            return;
-                          }
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="avatar">{m.initials || 'IS'}</div>
-                    )}
+                    <TeamAvatar member={m} fallbackInitials="IS" />
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -1490,26 +1503,7 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(effectiveTeamByRole.mentor || []).map((m) => (
                   <div key={m.id} className="person">
-                    {m.image_url ? (
-                      <img
-                        src={formatImageUrl(m.image_url)}
-                        alt={m.name}
-                        className="avatar"
-                        referrerPolicy="no-referrer"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          const driveId = extractGoogleDriveId(m.image_url);
-                          if (driveId && !e.target.dataset.triedFallback) {
-                            e.target.dataset.triedFallback = 'true';
-                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
-                            return;
-                          }
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="avatar">{m.initials || 'MS'}</div>
-                    )}
+                    <TeamAvatar member={m} fallbackInitials="MS" />
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -1528,26 +1522,7 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(effectiveTeamByRole.student || []).map((m) => (
                   <div key={m.id} className="person">
-                    {m.image_url ? (
-                      <img
-                        src={formatImageUrl(m.image_url)}
-                        alt={m.name}
-                        className="avatar"
-                        referrerPolicy="no-referrer"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          const driveId = extractGoogleDriveId(m.image_url);
-                          if (driveId && !e.target.dataset.triedFallback) {
-                            e.target.dataset.triedFallback = 'true';
-                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
-                            return;
-                          }
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="avatar">{m.initials || 'ST'}</div>
-                    )}
+                    <TeamAvatar member={m} fallbackInitials="ST" />
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>
@@ -1566,26 +1541,7 @@ export const PublicWebsite = () => {
               <div className="team-grid" style={{ marginTop: '22px' }}>
                 {(effectiveTeamByRole.contributor || []).map((m) => (
                   <div key={m.id} className="person">
-                    {m.image_url ? (
-                      <img
-                        src={formatImageUrl(m.image_url)}
-                        alt={m.name}
-                        className="avatar"
-                        referrerPolicy="no-referrer"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          const driveId = extractGoogleDriveId(m.image_url);
-                          if (driveId && !e.target.dataset.triedFallback) {
-                            e.target.dataset.triedFallback = 'true';
-                            e.target.src = `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`;
-                            return;
-                          }
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="avatar">{m.initials || 'FC'}</div>
-                    )}
+                    <TeamAvatar member={m} fallbackInitials="FC" />
                     <div>
                       <h3>{m.name}</h3>
                       <p>{m.designation}</p>

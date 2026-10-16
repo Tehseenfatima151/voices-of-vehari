@@ -186,18 +186,20 @@ export const TeamManager = () => {
                 <tr key={m.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {m.image_url ? (
-                        <img
-                          src={formatImageUrl(m.image_url)}
-                          alt={m.name}
-                          style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      ) : (
-                        <div className="avatar" style={{ width: '42px', height: '42px', fontSize: '14px' }}>
-                          {m.initials || 'IS'}
+                      <div style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                        <div className="avatar" style={{ width: '42px', height: '42px', fontSize: '14px', lineHeight: '42px', textAlign: 'center' }}>
+                          {m.initials || m.name?.slice(0, 2).toUpperCase() || 'TM'}
                         </div>
-                      )}
+                        {m.image_url && (
+                          <img
+                            src={formatImageUrl(m.image_url)}
+                            alt={m.name}
+                            referrerPolicy="no-referrer"
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
                       <strong style={{ color: 'var(--navy)' }}>{m.name}</strong>
                     </div>
                   </td>
@@ -313,12 +315,18 @@ export const TeamManager = () => {
 
                   {formData.image_url && (
                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img
-                        src={formatImageUrl(formData.image_url)}
-                        alt="Preview"
-                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--line)' }}
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
+                      <div style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--line)', flexShrink: 0 }}>
+                        <div className="avatar" style={{ width: '42px', height: '42px', fontSize: '14px', lineHeight: '42px', textAlign: 'center' }}>
+                          {formData.initials || formData.name?.slice(0, 2).toUpperCase() || 'TM'}
+                        </div>
+                        <img
+                          src={formatImageUrl(formData.image_url)}
+                          alt="Preview"
+                          referrerPolicy="no-referrer"
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
                       <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Photo Preview</span>
                     </div>
                   )}
