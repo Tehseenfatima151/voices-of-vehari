@@ -52,10 +52,7 @@ export const SettingsManager = () => {
       setUploadingLogo(true);
       const res = await api.uploadMedia(file, 'Site Logo');
       if (res.success && res.data) {
-        const urlToStore = (res.data.public_url && res.data.public_url.length <= 255)
-          ? res.data.public_url
-          : `media:${res.data.id}`;
-        setSettings((prev) => ({ ...prev, logo_url: urlToStore }));
+        setSettings((prev) => ({ ...prev, logo_url: res.data.public_url }));
         addToast('Logo uploaded successfully!', 'success');
       }
     } catch {
@@ -72,7 +69,6 @@ export const SettingsManager = () => {
       const formatForSaving = (url) => {
         if (!url || typeof url !== 'string') return '';
         const trimmed = url.trim();
-        if (trimmed.startsWith('media:')) return trimmed;
         if (isGoogleDriveUrl(trimmed)) return formatImageUrl(trimmed);
         return trimmed;
       };

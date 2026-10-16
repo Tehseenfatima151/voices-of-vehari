@@ -54,13 +54,9 @@ export const HeroManager = () => {
       setUploading(true);
       const res = await api.uploadMedia(file, `${fieldName} upload`);
       if (res.success && res.data) {
-        const urlToStore = (res.data.public_url && res.data.public_url.length <= 255)
-          ? res.data.public_url
-          : `media:${res.data.id}`;
-
         setHero((prev) => ({
           ...prev,
-          [fieldName]: urlToStore
+          [fieldName]: res.data.public_url
         }));
         addToast('Image uploaded successfully!', 'success');
       }
@@ -78,7 +74,6 @@ export const HeroManager = () => {
       const formatForSaving = (url) => {
         if (!url || typeof url !== 'string') return '';
         const trimmed = url.trim();
-        if (trimmed.startsWith('media:')) return trimmed;
         if (isGoogleDriveUrl(trimmed)) return formatImageUrl(trimmed);
         return trimmed;
       };

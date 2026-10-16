@@ -445,14 +445,23 @@ export const api = {
       // Settings
       let settings = getStorageItem('vov_cms_settings', fallbackData.settings);
       if (settingsRes.status === 'fulfilled' && Array.isArray(settingsRes.value.data) && settingsRes.value.data[0]) {
-        settings = settingsRes.value.data[0];
+        settings = { ...settingsRes.value.data[0] };
+        if (settings.logo_url && settings.logo_url.startsWith('media:')) {
+          settings.logo_url = await resolveMediaReference(settings.logo_url);
+        }
         setStorageItem('vov_cms_settings', settings);
       }
 
       // Hero
       let hero = getStorageItem('vov_cms_hero', fallbackData.hero);
       if (heroRes.status === 'fulfilled' && Array.isArray(heroRes.value.data) && heroRes.value.data[0]) {
-        hero = heroRes.value.data[0];
+        hero = { ...heroRes.value.data[0] };
+        if (hero.hero_image_url && hero.hero_image_url.startsWith('media:')) {
+          hero.hero_image_url = await resolveMediaReference(hero.hero_image_url);
+        }
+        if (hero.logo_float_url && hero.logo_float_url.startsWith('media:')) {
+          hero.logo_float_url = await resolveMediaReference(hero.logo_float_url);
+        }
         setStorageItem('vov_cms_hero', hero);
       }
 
@@ -829,20 +838,6 @@ export const api = {
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
 
-    // Handle VARCHAR(255) column for logo_url
-    if (patchPayload.logo_url && patchPayload.logo_url.length > 255) {
-      try {
-        const uploadRes = await api.uploadMedia(patchPayload.logo_url, 'Site Logo');
-        if (uploadRes?.data?.id) {
-          patchPayload.logo_url = `media:${uploadRes.data.id}`;
-        } else {
-          delete patchPayload.logo_url;
-        }
-      } catch (_) {
-        delete patchPayload.logo_url;
-      }
-    }
-
     setStorageItem('vov_cms_settings', { ...data, id: 1 });
     notifyStorageUpdate();
 
@@ -886,32 +881,6 @@ export const api = {
     delete patchPayload.id;
     delete patchPayload.created_at;
     delete patchPayload.updated_at;
-
-    // Handle VARCHAR(255) columns to avoid 22001 DB error by saving as media:ID
-    if (patchPayload.hero_image_url && patchPayload.hero_image_url.length > 255) {
-      try {
-        const uploadRes = await api.uploadMedia(patchPayload.hero_image_url, 'Hero Artwork');
-        if (uploadRes?.data?.id) {
-          patchPayload.hero_image_url = `media:${uploadRes.data.id}`;
-        } else {
-          delete patchPayload.hero_image_url;
-        }
-      } catch (_) {
-        delete patchPayload.hero_image_url;
-      }
-    }
-    if (patchPayload.logo_float_url && patchPayload.logo_float_url.length > 255) {
-      try {
-        const uploadRes = await api.uploadMedia(patchPayload.logo_float_url, 'Floating Logo');
-        if (uploadRes?.data?.id) {
-          patchPayload.logo_float_url = `media:${uploadRes.data.id}`;
-        } else {
-          delete patchPayload.logo_float_url;
-        }
-      } catch (_) {
-        delete patchPayload.logo_float_url;
-      }
-    }
 
     setStorageItem('vov_cms_hero', { ...data, id: 1 });
     notifyStorageUpdate();
