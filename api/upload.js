@@ -58,6 +58,9 @@ export default async function handler(req, res) {
 
       const catboxRes = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
         body: fd
       });
 
@@ -69,6 +72,27 @@ export default async function handler(req, res) {
         return res.status(200).json({
           success: true,
           url: directUrl,
+          message: 'Uploaded successfully'
+        });
+      }
+
+      // Fallback to Litterbox if main Catbox is busy
+      const litFd = new FormData();
+      litFd.append('reqtype', 'fileupload');
+      litFd.append('time', '72h');
+      litFd.append('fileToUpload', blob, fileName);
+      const litRes = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
+        body: litFd
+      });
+      const litUrl = (await litRes.text()).trim();
+      if (litRes.ok && litUrl.startsWith('http')) {
+        return res.status(200).json({
+          success: true,
+          url: litUrl,
           message: 'Uploaded successfully'
         });
       }

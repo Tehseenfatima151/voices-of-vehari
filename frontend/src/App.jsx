@@ -19,6 +19,7 @@ import SubmissionsManager from './admin/SubmissionsManager';
 import MediaLibrary from './admin/MediaLibrary';
 import SettingsManager from './admin/SettingsManager';
 import ResearchManager from './admin/ResearchManager';
+import AudioTranscriptsManager from './admin/AudioTranscriptsManager';
 
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
@@ -62,6 +63,7 @@ export const App = () => {
         <Route path="hero" element={<HeroManager />} />
         <Route path="research" element={<ResearchManager />} />
         <Route path="podcasts" element={<PodcastsManager />} />
+        <Route path="audio-transcripts" element={<AudioTranscriptsManager />} />
         <Route path="stories" element={<StoriesManager />} />
         <Route path="teacher-guide" element={<TeacherGuideManager />} />
         <Route path="vocabulary" element={<VocabularyManager />} />

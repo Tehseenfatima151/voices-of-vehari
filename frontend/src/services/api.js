@@ -566,6 +566,29 @@ export const api = {
         setStorageItem('vov_cms_research_brief', researchBrief);
       }
 
+      // Audio & Transcripts (from section_cards where section_group = 'audio_transcripts')
+      let audioTranscripts = getStorageItem('vov_cms_audio_transcripts', fallbackData.audioTranscripts);
+      const audioCard = (cardsRes.status === 'fulfilled' && Array.isArray(cardsRes.value.data))
+        ? cardsRes.value.data.find((c) => c.section_group === 'audio_transcripts')
+        : null;
+      if (audioCard) {
+        let meta = {};
+        if (audioCard.bullets_json) {
+          try {
+            meta = typeof audioCard.bullets_json === 'string' ? JSON.parse(audioCard.bullets_json) : audioCard.bullets_json;
+          } catch (_) {}
+        }
+        audioTranscripts = {
+          ...fallbackData.audioTranscripts,
+          ...meta,
+          id: audioCard.id,
+          hero_eyebrow: audioCard.card_category || meta.hero_eyebrow || fallbackData.audioTranscripts?.hero_eyebrow,
+          hero_title: audioCard.title || meta.hero_title || fallbackData.audioTranscripts?.hero_title,
+          hero_subtitle: audioCard.description || meta.hero_subtitle || fallbackData.audioTranscripts?.hero_subtitle,
+        };
+        setStorageItem('vov_cms_audio_transcripts', audioTranscripts);
+      }
+
       // Teacher Guide parts
       let tgArticles = null;
       if (tgArticlesRes.status === 'fulfilled' && Array.isArray(tgArticlesRes.value.data) && tgArticlesRes.value.data.length > 0) {
@@ -609,6 +632,7 @@ export const api = {
         timeline,
         references,
         researchBrief,
+        audioTranscripts,
         vocabulary,
         teacherGuide,
       };
@@ -634,6 +658,7 @@ export const api = {
         timeline: getStorageItem('vov_cms_timeline', fallbackData.timeline),
         references: getStorageItem('vov_cms_references', fallbackData.references || []),
         researchBrief: getStorageItem('vov_cms_research_brief', fallbackData.researchBrief),
+        audioTranscripts: getStorageItem('vov_cms_audio_transcripts', fallbackData.audioTranscripts),
         vocabulary: getStorageItem('vov_cms_vocabulary', fallbackData.vocabulary || []),
         teacherGuide: buildTeacherGuidePayload(),
       };
@@ -1628,9 +1653,19 @@ export const api = {
       let publicUrl = '';
       let base64Data = '';
 
-      // 1. Client-side compression for images
+      // 1. Client-side handling: compress images, or read audio as data URL
       if (file && typeof file === 'object') {
-        base64Data = await compressImageFile(file, 1000, 0.82);
+        const isAudio = file.type && (file.type.startsWith('audio/') || file.name?.endsWith('.mp3') || file.name?.endsWith('.wav') || file.name?.endsWith('.m4a') || file.name?.endsWith('.ogg'));
+        if (isAudio) {
+          base64Data = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result || '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+          });
+        } else {
+          base64Data = await compressImageFile(file, 1000, 0.82);
+        }
       } else if (typeof file === 'string') {
         base64Data = file;
       }
@@ -1643,8 +1678,8 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               file: base64Data,
-              name: file.name || `media_${Date.now()}.png`,
-              type: file.type || 'image/png'
+              name: file.name || `media_${Date.now()}.${file.type?.includes('audio') ? 'mp3' : 'png'}`,
+              type: file.type || (file.name?.endsWith('.mp3') ? 'audio/mpeg' : 'image/png')
             })
           });
           if (uploadRes.ok) {
@@ -2395,6 +2430,69 @@ export const api = {
       console.warn('Supabase updateResearchBrief error:', err);
       notifyStorageUpdate();
       return { success: true, message: 'Research brief saved locally' };
+    }
+  },
+
+  // ================= 21B. AUDIO & TRANSCRIPTS =================
+  getAudioTranscripts: async () => {
+    try {
+      const res = await supabaseClient.get('/section_cards?section_group=eq.audio_transcripts&limit=1');
+      if (Array.isArray(res.data) && res.data[0]) {
+        const row = res.data[0];
+        let meta = {};
+        if (row.bullets_json) {
+          try {
+            meta = typeof row.bullets_json === 'string' ? JSON.parse(row.bullets_json) : row.bullets_json;
+          } catch (_) {}
+        }
+        const combined = {
+          ...fallbackData.audioTranscripts,
+          ...meta,
+          id: row.id,
+          hero_eyebrow: row.card_category || meta.hero_eyebrow || fallbackData.audioTranscripts?.hero_eyebrow,
+          hero_title: row.title || meta.hero_title || fallbackData.audioTranscripts?.hero_title,
+          hero_subtitle: row.description || meta.hero_subtitle || fallbackData.audioTranscripts?.hero_subtitle,
+        };
+        setStorageItem('vov_cms_audio_transcripts', combined);
+        return combined;
+      }
+    } catch (_) {}
+    return getStorageItem('vov_cms_audio_transcripts', fallbackData.audioTranscripts);
+  },
+
+  updateAudioTranscripts: async (data) => {
+    const current = getStorageItem('vov_cms_audio_transcripts', fallbackData.audioTranscripts);
+    const updated = { ...current, ...data };
+    setStorageItem('vov_cms_audio_transcripts', updated);
+
+    const payload = {
+      section_group: 'audio_transcripts',
+      card_category: updated.hero_eyebrow || 'Learning Resource',
+      title: updated.hero_title || 'Audio Archive & Full Transcripts',
+      description: updated.hero_subtitle || '',
+      bullets_json: JSON.stringify(updated),
+      sort_order: 1,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      const checkRes = await supabaseClient.get('/section_cards?section_group=eq.audio_transcripts&limit=1');
+      if (Array.isArray(checkRes.data) && checkRes.data[0]?.id) {
+        await supabaseClient.patch(`/section_cards?id=eq.${checkRes.data[0].id}`, payload, {
+          headers: { Prefer: 'return=representation' }
+        });
+      } else {
+        await supabaseClient.post('/section_cards', payload, {
+          headers: { Prefer: 'return=representation' }
+        });
+      }
+      notifyStorageUpdate();
+      return { success: true, message: 'Audio & Transcripts updated successfully!' };
+    } catch (err) {
+      console.warn('Supabase updateAudioTranscripts error:', err);
+      notifyStorageUpdate();
+      return { success: true, message: 'Audio & Transcripts saved locally' };
     }
   },
 

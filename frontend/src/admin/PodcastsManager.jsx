@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useToast } from '../context/ToastContext';
 import ConfirmationModal from '../components/ConfirmationModal';
+import AudioPlayer from '../components/AudioPlayer';
 import {
   formatImageUrl,
   formatAudioUrl,
@@ -18,6 +19,7 @@ export const PodcastsManager = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedPodcast, setSelectedPodcast] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [uploadingField, setUploadingField] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -139,14 +141,19 @@ export const PodcastsManager = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    setUploadingField(field);
     try {
       const res = await api.uploadMedia(file, `${field} for podcast`);
       if (res.success && res.data) {
         setFormData((prev) => ({ ...prev, [field]: res.data.public_url }));
         addToast('File uploaded successfully!', 'success');
+      } else {
+        addToast(res.message || 'Upload failed', 'error');
       }
     } catch (err) {
-      addToast(err.response?.data?.message || 'Upload failed', 'error');
+      addToast(err.response?.data?.message || err.message || 'Upload failed', 'error');
+    } finally {
+      setUploadingField(null);
     }
   };
 
@@ -432,19 +439,70 @@ export const PodcastsManager = () => {
                       onChange={(e) => setFormData({ ...formData, audio_url: e.target.value })}
                       placeholder="https://... or Google Drive audio link or /api/uploads/..."
                     />
-                    <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      Upload Audio
+                    <label
+                      className="btn ghost sm"
+                      style={{
+                        cursor: uploadingField === 'audio_url' ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: uploadingField === 'audio_url' ? '#e2e8f0' : '#ffffff',
+                      }}
+                    >
+                      {uploadingField === 'audio_url' ? (
+                        <>
+                          <span className="spinner sm" style={{ width: '12px', height: '12px' }} />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Upload Audio'
+                      )}
                       <input
                         type="file"
-                        accept="audio/*"
+                        accept="audio/*,.mp3,.wav,.ogg,.m4a"
+                        disabled={uploadingField === 'audio_url'}
                         style={{ display: 'none' }}
                         onChange={(e) => handleFileUpload(e, 'audio_url')}
                       />
                     </label>
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
-                    Supports direct MP3 links, Google Drive share links, or file uploads.
+                    Supports direct MP3 links, Google Drive share links, or file uploads from computer.
                   </div>
+
+                  {formData.audio_url && (
+                    <div
+                      style={{
+                        marginTop: '10px',
+                        padding: '12px',
+                        background: '#f8fafc',
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: isGoogleDriveUrl(formData.audio_url) ? '#0984e3' : '#27ae60' }}>
+                          {isGoogleDriveUrl(formData.audio_url) ? '✓ Google Drive Audio stream ready' : '✓ Direct Audio ready'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, audio_url: '' }))}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#d63031',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        >
+                          ✕ Clear Audio
+                        </button>
+                      </div>
+                      <AudioPlayer src={formatAudioUrl(formData.audio_url)} title={formData.title || 'Live Audio Preview'} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Cover Image */}
@@ -457,11 +515,29 @@ export const PodcastsManager = () => {
                       onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
                       placeholder="https://... or Google Drive link or /api/uploads/..."
                     />
-                    <label className="btn ghost sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                      Upload Cover
+                    <label
+                      className="btn ghost sm"
+                      style={{
+                        cursor: uploadingField === 'cover_image_url' ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: uploadingField === 'cover_image_url' ? '#e2e8f0' : '#ffffff',
+                      }}
+                    >
+                      {uploadingField === 'cover_image_url' ? (
+                        <>
+                          <span className="spinner sm" style={{ width: '12px', height: '12px' }} />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Upload Cover'
+                      )}
                       <input
                         type="file"
                         accept="image/*"
+                        disabled={uploadingField === 'cover_image_url'}
                         style={{ display: 'none' }}
                         onChange={(e) => handleFileUpload(e, 'cover_image_url')}
                       />

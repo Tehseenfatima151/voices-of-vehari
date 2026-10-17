@@ -1,17 +1,106 @@
 import React, { useState, useRef } from 'react';
+import { isGoogleDriveUrl, extractGoogleDriveId } from '../utils/mediaUrlHelper';
 
-export const AudioPlayer = ({ src, placeholderText = 'Connect the final recording here' }) => {
+export const AudioPlayer = ({
+  src,
+  title = '',
+  placeholderText = 'Connect the final recording here'
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
+  // If no audio is attached yet, display the placeholder
+  if (!src || typeof src !== 'string' || !src.trim()) {
+    return (
+      <div className="audio">
+        <div className="audio-row">
+          <button
+            className="play"
+            type="button"
+            onClick={() => alert('Recording placeholder: No audio recording attached yet. Add audio via the Admin Panel!')}
+            aria-label="No audio file"
+            style={{ opacity: 0.65 }}
+          >
+            ▶
+          </button>
+          <div>
+            <strong>Audio placeholder</strong>
+            <div style={{ color: 'var(--muted)', fontSize: '13px' }}>
+              {placeholderText}
+            </div>
+          </div>
+          <div className="wave"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const trimmed = src.trim();
+  const isDrive = isGoogleDriveUrl(trimmed);
+  const driveId = isDrive ? extractGoogleDriveId(trimmed) : null;
+
+  // Google Drive Audio: Render Google's native embedded streaming player (zero CORS errors, native scrubber)
+  if (isDrive && driveId) {
+    return (
+      <div
+        className="audio"
+        style={{
+          padding: '12px 14px',
+          background: '#f8fafc',
+          borderRadius: '16px',
+          border: '1px solid var(--line, #dfe8f1)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>🎙️</span>
+            <div>
+              <strong style={{ fontSize: '13.5px', color: 'var(--navy)', display: 'block', lineHeight: 1.2 }}>
+                {title ? `${title}` : 'Episode Audio Recording'}
+              </strong>
+              <span style={{ fontSize: '11px', color: 'var(--teal)', fontWeight: 600 }}>
+                Google Drive Audio Stream
+              </span>
+            </div>
+          </div>
+          <a
+            href={`https://drive.google.com/file/d/${driveId}/view`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn ghost sm"
+            style={{
+              fontSize: '11px',
+              padding: '2px 8px',
+              height: 'auto',
+              background: '#fff',
+              whiteSpace: 'nowrap',
+            }}
+            title="Open recording in Google Drive"
+          >
+            Open in Drive ↗
+          </a>
+        </div>
+        <iframe
+          src={`https://drive.google.com/file/d/${driveId}/preview`}
+          width="100%"
+          height="54"
+          frameBorder="0"
+          allow="autoplay"
+          style={{
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            display: 'block',
+            background: '#ffffff',
+          }}
+          title="Google Drive Audio Player"
+        />
+      </div>
+    );
+  }
+
+  // Direct Audio URL (MP3, WAV, Catbox CDN, Uploaded file)
   const togglePlay = () => {
-    if (!src) {
-      alert('Recording placeholder: No audio file attached yet. Upload audio via the Admin Panel!');
-      return;
-    }
-
     if (!audioRef.current) return;
-
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -28,26 +117,29 @@ export const AudioPlayer = ({ src, placeholderText = 'Connect the final recordin
   return (
     <div className="audio">
       <div className="audio-row">
-        <button className="play" type="button" onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+        <button
+          className="play"
+          type="button"
+          onClick={togglePlay}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+        >
           {isPlaying ? '❚❚' : '▶'}
         </button>
         <div>
-          <strong>{src ? (isPlaying ? 'Playing episode' : 'Episode Audio') : 'Audio placeholder'}</strong>
+          <strong>{isPlaying ? 'Playing episode recording...' : (title || 'Episode Audio')}</strong>
           <div style={{ color: 'var(--muted)', fontSize: '13px' }}>
-            {src ? 'Click to play / pause' : placeholderText}
+            Click to {isPlaying ? 'pause' : 'play recording'}
           </div>
         </div>
         <div className={`wave ${isPlaying ? 'playing' : ''}`}></div>
       </div>
-      {src && (
-        <audio
-          ref={audioRef}
-          src={src}
-          onEnded={() => setIsPlaying(false)}
-          onPause={() => setIsPlaying(false)}
-          preload="metadata"
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src={trimmed}
+        onEnded={() => setIsPlaying(false)}
+        onPause={() => setIsPlaying(false)}
+        preload="metadata"
+      />
     </div>
   );
 };

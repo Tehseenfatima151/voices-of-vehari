@@ -92,6 +92,17 @@ export const getGoogleDriveAudioUrl = (url) => {
 };
 
 /**
+ * Converts a Google Drive link to embed audio preview stream URL.
+ */
+export const getGoogleDriveAudioEmbedUrl = (url) => {
+  const fileId = extractGoogleDriveId(url);
+  if (fileId) {
+    return `https://drive.google.com/file/d/${fileId}/preview`;
+  }
+  return null;
+};
+
+/**
  * Extracts YouTube Video ID from various YouTube URL formats:
  * - https://www.youtube.com/watch?v=VIDEO_ID
  * - https://youtu.be/VIDEO_ID
@@ -231,14 +242,30 @@ export const formatImageUrl = (url) => {
 
 /**
  * General purpose formatter for audio URLs.
- * If given a Google Drive link, converts to playable audio stream.
+ * Resolves media:id references while preserving Google Drive and direct links.
  */
 export const formatAudioUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
-  if (isGoogleDriveUrl(url)) {
-    return getGoogleDriveAudioUrl(url);
+  const trimmed = url.trim();
+  if (trimmed.startsWith('media:')) {
+    if (mediaCache[trimmed]) return mediaCache[trimmed];
+    const id = trimmed.replace('media:', '');
+    if (mediaCache[id]) return mediaCache[id];
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('vov_cms_media');
+        if (raw) {
+          const list = JSON.parse(raw);
+          const found = list.find((m) => String(m.id) === id);
+          if (found && found.public_url) {
+            mediaCache[trimmed] = found.public_url;
+            return found.public_url;
+          }
+        }
+      } catch (_) {}
+    }
   }
-  return url;
+  return trimmed;
 };
 
 /**

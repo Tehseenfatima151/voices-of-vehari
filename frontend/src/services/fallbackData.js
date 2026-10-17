@@ -54,6 +54,41 @@ export const fallbackData = {
     qualitative_description: 'Participant perspectives and experiences gathered through discussions and practice sessions to understand how learners and teachers perceive the approach.',
   },
 
+  audioTranscripts: {
+    hero_eyebrow: 'Audio & transcripts',
+    hero_title: 'Listen to the voice. Read the words. Practise the language.',
+    hero_description: 'Pair every recording with an accessible transcript and learning layer.',
+    model_eyebrow: 'Transcript model',
+    model_title: 'One episode, four learning layers.',
+    publishing_note: 'Full transcripts are added as recordings are finalized and verified by the project team.',
+    transcripts: {
+      8: {
+        original: 'Bilingual dialogue exploring the historic settlements and cultural roots of Vehari.',
+        english: 'Full English narration and transcript of the interview with Sheikh Khalid Masood.',
+        vocabulary: 'Key terms: heritage, folklore, canal colonies, oral history, multilingual.',
+        practice: 'Discuss: How have cultural traditions in your area transformed over recent generations?'
+      },
+      9: {
+        original: 'Local dialogue detailing dairy cattle management and rural household economies in Vehari.',
+        english: 'English transcript discussing the vital role of women farmers in livestock care.',
+        vocabulary: 'Key terms: dairy farming, livestock, agrarian livelihood, fodder, self-reliance.',
+        practice: 'Describe the daily routine of a farmer or craftsperson in your family or neighbourhood.'
+      },
+      10: {
+        original: 'Community discussion on girls education, university access and women leadership.',
+        english: 'Complete English transcript of the conversation with Dr. Asma Kashif Shehzad.',
+        vocabulary: 'Key terms: literacy, empowerment, mentorship, higher education, access.',
+        practice: 'What steps can rural communities take to support women in pursuing university degrees?'
+      },
+      11: {
+        original: 'Casual interview in Urdu and English exploring local culinary traditions and street food.',
+        english: 'English transcript highlighting local food culture, spices and hospitality.',
+        vocabulary: 'Key terms: culinary, street food, food vlogging, hospitality, authentic.',
+        practice: 'Describe your favourite traditional dish from Vehari or Punjab using five sensory adjectives.'
+      }
+    }
+  },
+
   statistics: [
     { value: '12', label: 'Months of project activity', sort_order: 1 },
     { value: '20', label: 'University students in the podcast intervention', sort_order: 2 },
@@ -638,6 +673,71 @@ export const fallbackData = {
     { id: 11, word: 'Dialect', part_of_speech: 'noun', meaning: 'A variety of a language spoken in a particular region or by a particular social group, with its own vocabulary and pronunciation.', example_sentence: 'Saraiki is a dialect widely spoken in southern Punjab, including the Vehari region.', category: 'Communication', level: 'Advanced', display_order: 11, is_published: true },
     { id: 12, word: 'Hospitality', part_of_speech: 'noun', meaning: 'The friendly and generous reception and entertainment of guests or strangers; warmth and openness toward others.', example_sentence: 'Hospitality is deeply valued in Vehari culture, where guests are always welcomed with food and tea.', category: 'Culture', level: 'Beginner', display_order: 12, is_published: true },
   ],
+
+  audioTranscripts: {
+    hero_eyebrow: 'Audio & transcripts',
+    hero_title: 'Listen to the voice. Read the words. Practise the language.',
+    hero_subtitle: 'Pair every recording with an accessible transcript and learning layer.',
+    model_title: 'One episode, four learning layers.',
+    model_points: [
+      'Original conversation — preserve the authentic exchange.',
+      'English version — support comprehension and comparison.',
+      'Vocabulary — highlight useful words and phrases.',
+      'Practice — add listening, speaking and reflection activities.',
+    ],
+    publishing_title: 'Publishing note',
+    publishing_note: 'Full transcripts are verified and checked by the project team. Use this archive to listen, compare languages, and practice English conversational skills.',
+    transcripts: {
+      1: {
+        episode_id: 1,
+        title: 'Oral History & Storytelling Traditions',
+        guest: 'Master Ghulam Rasool',
+        original_text: `Host: السلام علیکم استاد غلام رسول صاحب، وائسز آف وہاڑی وچ خوش آمدید۔
+استاد غلام رسول: وعلیکم السلام پتر۔ وڈی خوشی ہوئی کہ تسیں ساڈی وہاڑی دی پرانی کہانیاں سنن آئے۔
+Host: استاد جی، تہاڈے دور وچ کہانیاں سنان دا رواج کیویں ہندا سی؟
+استاد غلام رسول: اس ویلے شامیں ڈیرے تے سب بیٹھدے سی، بزرگ حقہ پیندے سن تے داستاناں سناؤندے سن۔ اوہناں کہانیاں وچوں اخلاق تے ہمت سکھن نوں ملدی سی۔ اج کل دے بال موبائل وچ گم ہو گئے نیں۔`,
+        english_text: `Host: Peace be upon you, Master Ghulam Rasool, welcome to Voices of Vehari.
+Master Ghulam Rasool: And peace be upon you, my child. I am delighted that you have come to listen to our old stories of Vehari.
+Host: Master Sahib, how was the tradition of storytelling during your time?
+Master Ghulam Rasool: Back in those days, in the evenings everyone gathered at the village common house (derah); the elders would smoke the hookah and recite folk tales. Through those stories, we learned morals, resilience, and wisdom. Nowadays, children are lost in mobile phones.`,
+        vocabulary: [
+          { term: 'Oral Tradition', urdu: 'زبانی روایات', note: 'Passing wisdom through speech from elder to youth' },
+          { term: 'Village Derah', urdu: 'دیہاتی ڈیرہ', note: 'Community gathering space for dialogue and council' },
+          { term: 'Folk Tales', urdu: 'لوک داستانیں', note: 'Traditional stories reflecting regional culture and moral values' },
+          { term: 'Elders', urdu: 'بزرگ / اکابرین', note: 'Senior community members bearing ancestral knowledge' }
+        ],
+        practice_questions: [
+          'What role did the derah play in community storytelling in Vehari?',
+          'In your opinion, how can modern audio recordings help preserve oral history?',
+          'Pair with a classmate: Describe one story an elder in your family told you.'
+        ]
+      },
+      2: {
+        episode_id: 2,
+        title: 'Bilingual Education in Rural Classrooms',
+        guest: 'Madam Tahira Jabeen',
+        original_text: `Host: میڈم طاہرہ صاحبہ، ساڈے پنڈاں دے سکولاں وچ انگریزی سکھان لئی کیہڑے چیلنجز آندے نیں؟
+میڈم طاہرہ: سب توں وڈی رکاوٹ ایہہ ہے کہ بچے روزمرہ زندگی وچ پنجابی تے سرائیکی بولدے نیں، جدوں کہ کلاس روم وچ کتاباں انگریزی وچ ہوندیاں نیں۔ جے اسیں مقامی مثالاں دے کے سکھائیے تاں بچے بوہت جلدی سکھ لیندے نیں۔
+Host: تاں وائسز آف وہاڑی دا طریقہ کار کیویں مددگار ہو سکدا اے؟
+میڈم طاہرہ: جدوں طالب علم اپنی ہی دھرتی دے قصے سن کے اوہناں دا انگریزی ترجمہ کردے نیں، تاں اوہناں دا خوف ختم ہو جاندا اے تے خود اعتمادی پیدا ہوندی اے۔`,
+        english_text: `Host: Madam Tahira, what are the primary challenges when teaching English in our rural schools?
+Madam Tahira: The biggest obstacle is that children speak Punjabi and Saraiki in their daily lives, whereas textbook materials are entirely in English. If we teach by connecting concepts with local, familiar examples, students absorb the language much faster.
+Host: So how can the Voices of Vehari pedagogy assist here?
+Madam Tahira: When students listen to tales of their own soil and translate them into English, their fear of speaking dissipates and true communicative confidence is born.`,
+        vocabulary: [
+          { term: 'Bilingual', urdu: 'دو لسانی', note: 'Using two languages for bridging comprehension' },
+          { term: 'Communicative Confidence', urdu: 'بات چیت کا اعتماد', note: 'Speaking without anxiety or hesitation' },
+          { term: 'Pedagogy', urdu: 'طریقہ تدریس', note: 'The method and practice of teaching' },
+          { term: 'Obstacle', urdu: 'رکاوٹ', note: 'A barrier or challenge to overcome' }
+        ],
+        practice_questions: [
+          'Why does connecting English lessons to local culture reduce classroom anxiety?',
+          'How does speaking multiple home languages benefit language learners?',
+          'Roleplay: One student acts as teacher asking about Vehari crops, partner answers in English.'
+        ]
+      }
+    }
+  },
 };
 
 export default fallbackData;

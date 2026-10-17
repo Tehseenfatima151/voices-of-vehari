@@ -84,6 +84,7 @@ export const PublicWebsite = () => {
   const [activeTab, setActiveTab] = useState('all'); // for podcast filter
   const [audioSearch, setAudioSearch] = useState(''); // for audio transcripts search
   const [activeVideoPodcast, setActiveVideoPodcast] = useState(null); // for video modal
+  const [activeTranscriptPodcast, setActiveTranscriptPodcast] = useState(null); // for interactive transcript modal
   const [selectedTeacherCategory, setSelectedTeacherCategory] = useState('All'); // for teacher guide category filter
   const [activeResourceModal, setActiveResourceModal] = useState(null); // for teacher guide read more modal
   const [copiedPromptIndex, setCopiedPromptIndex] = useState(null); // for copy prompt toast feedback
@@ -149,6 +150,7 @@ export const PublicWebsite = () => {
     timeline = [],
     references = [],
     researchBrief = fallbackData.researchBrief,
+    audioTranscripts = fallbackData.audioTranscripts,
     teacherGuide = fallbackData.teacherGuide,
     vocabulary = fallbackData.vocabulary || [],
   } = data || {};
@@ -806,7 +808,13 @@ export const PublicWebsite = () => {
                             â–¶ Watch Video
                           </button>
                         )}
-                        <a className="btn ghost sm" href="#audio-transcripts">Transcript</a>
+                        <button
+                          type="button"
+                          className="btn ghost sm"
+                          onClick={() => setActiveTranscriptPodcast(pod)}
+                        >
+                          Transcript
+                        </button>
                         <a className="btn primary sm" href="#learning">Learn from it</a>
                       </div>
                     </div>
@@ -1326,9 +1334,11 @@ export const PublicWebsite = () => {
         <section className="view" id="audio-transcripts" style={{ display: 'block' }}>
           <section className="page-hero">
             <div className="container">
-              <span className="eyebrow" style={{ color: '#dcecff' }}>Audio & transcripts</span>
-              <h1>Listen to the voice. Read the words. Practise the language.</h1>
-              <p>Pair every recording with an accessible transcript and learning layer.</p>
+              <span className="eyebrow" style={{ color: '#dcecff' }}>
+                {audioTranscripts.hero_eyebrow || 'Audio & transcripts'}
+              </span>
+              <h1>{audioTranscripts.hero_title || 'Listen to the voice. Read the words. Practise the language.'}</h1>
+              <p>{audioTranscripts.hero_subtitle || 'Pair every recording with an accessible transcript and learning layer.'}</p>
             </div>
           </section>
           <section className="section">
@@ -1378,8 +1388,8 @@ export const PublicWebsite = () => {
                         ))}
                     </div>
                     <h3>{pod.title}</h3>
-                    {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `Â· Host: ${pod.host}` : ''}</p>}
-                    <AudioPlayer src={formatAudioUrl(pod.audio_url)} />
+                    {pod.guest && <p style={{ margin: '4px 0', color: 'var(--muted)' }}>Guest: {pod.guest} {pod.host ? `• Host: ${pod.host}` : ''}</p>}
+                    <AudioPlayer src={formatAudioUrl(pod.audio_url)} title={pod.title} />
                     <div className="actions" style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {pod.video_url && (
                         <button
@@ -1388,10 +1398,16 @@ export const PublicWebsite = () => {
                           style={{ background: '#e84118', borderColor: '#c23616' }}
                           onClick={() => setActiveVideoPodcast(pod)}
                         >
-                          â–¶ Watch Video
+                          ▶ Watch Video
                         </button>
                       )}
-                      <a className="btn ghost sm" href="#transcript">Open transcript</a>
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={() => setActiveTranscriptPodcast(pod)}
+                      >
+                        Open transcript
+                      </button>
                       <a className="btn ghost sm" href="#learning">Learning activity</a>
                     </div>
                   </div>
@@ -1403,17 +1419,32 @@ export const PublicWebsite = () => {
             <div className="container two-col">
               <div>
                 <span className="eyebrow">Transcript model</span>
-                <h2>One episode, four learning layers.</h2>
+                <h2>{audioTranscripts.model_title || 'One episode, four learning layers.'}</h2>
                 <ol style={{ paddingLeft: '20px', margin: 0, color: 'var(--muted)', fontSize: '15px', lineHeight: 1.8 }}>
-                  <li><strong>Original conversation</strong> â€” preserve the authentic exchange.</li>
-                  <li><strong>English version</strong> â€” support comprehension and comparison.</li>
-                  <li><strong>Vocabulary</strong> â€” highlight useful words and phrases.</li>
-                  <li><strong>Practice</strong> â€” add listening, speaking and reflection activities.</li>
+                  {(audioTranscripts.model_points || [
+                    'Original conversation — preserve the authentic exchange.',
+                    'English version — support comprehension and comparison.',
+                    'Vocabulary — highlight useful words and phrases.',
+                    'Practice — add listening, speaking and reflection activities.',
+                  ]).map((point, pIdx) => (
+                    <li key={pIdx}>
+                      {point.includes('—') ? (
+                        <>
+                          <strong>{point.split('—')[0].trim()}</strong> — {point.split('—').slice(1).join('—').trim()}
+                        </>
+                      ) : (
+                        point
+                      )}
+                    </li>
+                  ))}
                 </ol>
               </div>
               <div className="callout">
-                <h3>Publishing note</h3>
-                <p>Full transcripts should be added after recordings are finalized and checked by the project team. The demo intentionally uses placeholders rather than inventing dialogue.</p>
+                <h3>{audioTranscripts.publishing_title || 'Publishing note'}</h3>
+                <p>
+                  {audioTranscripts.publishing_note ||
+                    'Full transcripts should be added after recordings are finalized and checked by the project team. The demo intentionally uses placeholders rather than inventing dialogue.'}
+                </p>
               </div>
             </div>
           </section>
@@ -1834,6 +1865,343 @@ export const PublicWebsite = () => {
           </div>
         </div>
       )}
+
+      {/* ================= INTERACTIVE TRANSCRIPT MODAL ================= */}
+      {activeTranscriptPodcast && (() => {
+        const podId = activeTranscriptPodcast.id;
+        const transcriptsMap = audioTranscripts?.transcripts || {};
+        const transcript =
+          transcriptsMap[podId] ||
+          transcriptsMap[String(podId)] ||
+          fallbackData.audioTranscripts?.transcripts?.[podId] ||
+          null;
+
+        return (
+          <div
+            className="modal-overlay"
+            onClick={() => setActiveTranscriptPodcast(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px',
+            }}
+          >
+            <div
+              className="modal-container"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                width: '100%',
+                maxWidth: '780px',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              }}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  padding: '20px 24px',
+                  background: '#1e3a5f',
+                  color: '#ffffff',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        background: 'rgba(255,255,255,0.2)',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {activeTranscriptPodcast.category || 'Episode'}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Interactive Transcript</span>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#ffffff' }}>
+                    {activeTranscriptPodcast.title}
+                  </h3>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '2px' }}>
+                    Guest: <strong>{activeTranscriptPodcast.guest || 'Project Contributor'}</strong>{' '}
+                    {activeTranscriptPodcast.host ? `• Host: ${activeTranscriptPodcast.host}` : ''}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTranscriptPodcast(null)}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '18px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Sticky Audio Player inside Modal */}
+              <div style={{ padding: '14px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <AudioPlayer
+                  src={formatAudioUrl(activeTranscriptPodcast.audio_url)}
+                  title={activeTranscriptPodcast.title}
+                />
+              </div>
+
+              {/* Scrollable Content */}
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'grid', gap: '20px' }}>
+                {transcript ? (
+                  <>
+                    {/* Layer 1: Original Conversation */}
+                    {transcript.original_text && (
+                      <div
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          padding: '18px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '10px',
+                          }}
+                        >
+                          <span style={{ fontWeight: 800, color: '#1e3a5f', fontSize: '14px' }}>
+                            1. Original Conversation (مقامی زبان / پنجابی)
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              background: '#fef3c7',
+                              color: '#92400e',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Authentic
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '14px',
+                            lineHeight: 1.8,
+                            whiteSpace: 'pre-line',
+                            color: '#334155',
+                          }}
+                        >
+                          {transcript.original_text}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Layer 2: English Version */}
+                    {transcript.english_text && (
+                      <div
+                        style={{
+                          background: '#f0f9ff',
+                          border: '1px solid #bae6fd',
+                          borderRadius: '12px',
+                          padding: '18px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '10px',
+                          }}
+                        >
+                          <span style={{ fontWeight: 800, color: '#0369a1', fontSize: '14px' }}>
+                            2. English Version (Translation & Comprehension)
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              background: '#dbeafe',
+                              color: '#1e40af',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Comprehension
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '14px',
+                            lineHeight: 1.8,
+                            whiteSpace: 'pre-line',
+                            color: '#1e293b',
+                          }}
+                        >
+                          {transcript.english_text}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Layer 3: Key Vocabulary */}
+                    {Array.isArray(transcript.vocabulary) && transcript.vocabulary.length > 0 && (
+                      <div>
+                        <h4 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: '#1e3a5f' }}>
+                          3. Key Vocabulary
+                        </h4>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                            gap: '10px',
+                          }}
+                        >
+                          {transcript.vocabulary.map((v, vi) => (
+                            <div
+                              key={vi}
+                              style={{
+                                background: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '10px',
+                                padding: '12px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div style={{ fontWeight: 700, color: '#1e3a5f', fontSize: '14px' }}>{v.term}</div>
+                              {v.urdu && (
+                                <div style={{ fontSize: '13px', color: '#e84118', fontWeight: 600, marginTop: '2px' }}>
+                                  {v.urdu}
+                                </div>
+                              )}
+                              {v.note && (
+                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                                  {v.note}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Layer 4: Practice & Discussion Questions */}
+                    {Array.isArray(transcript.practice_questions) && transcript.practice_questions.length > 0 && (
+                      <div
+                        style={{
+                          background: '#fdf4ff',
+                          border: '1px solid #f0abfc',
+                          borderRadius: '12px',
+                          padding: '18px',
+                        }}
+                      >
+                        <h4 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: '#86198f' }}>
+                          4. Practice & Classroom Discussion
+                        </h4>
+                        <ol
+                          style={{
+                            paddingLeft: '20px',
+                            margin: 0,
+                            color: '#701a75',
+                            fontSize: '14px',
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          {transcript.practice_questions.map((q, qi) => (
+                            <li key={qi} style={{ marginBottom: '6px' }}>
+                              {q}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>📝</div>
+                    <h4 style={{ margin: '0 0 6px', color: 'var(--navy)' }}>Full Transcript Under Preparation</h4>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: '14px',
+                        maxWidth: '440px',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                      }}
+                    >
+                      The recording is active. The 4-layer verified transcript for this episode can be edited and
+                      published directly from the Admin Panel.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                style={{
+                  padding: '14px 24px',
+                  background: '#f8fafc',
+                  borderTop: '1px solid #e2e8f0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <a
+                  href="#learning"
+                  onClick={() => setActiveTranscriptPodcast(null)}
+                  className="btn ghost sm"
+                >
+                  Explore Learning Activities ↗
+                </a>
+                <button
+                  type="button"
+                  className="btn primary sm"
+                  onClick={() => {
+                    navigator.clipboard?.writeText?.(
+                      `${activeTranscriptPodcast.title}\nGuest: ${activeTranscriptPodcast.guest || ''}\n\nORIGINAL:\n${transcript?.original_text || ''}\n\nENGLISH:\n${transcript?.english_text || ''}`
+                    );
+                    addToast('Transcript copied to clipboard!', 'success');
+                  }}
+                >
+                  📋 Copy Text
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Teacher Guide Resource Detail Modal */}
       {activeResourceModal && (
