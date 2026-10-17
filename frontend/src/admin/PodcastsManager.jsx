@@ -159,10 +159,25 @@ export const PodcastsManager = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    let audioUrl = (formData.audio_url || '').trim();
+    if (audioUrl.length > 400 && audioUrl.startsWith('data:')) {
+      const uploadRes = await api.uploadMedia(audioUrl, `Audio recording for ${formData.title}`);
+      if (uploadRes.success && uploadRes.data?.public_url) {
+        audioUrl = uploadRes.data.public_url;
+      }
+    }
+    let coverUrl = (formData.cover_image_url || '').trim();
+    if (coverUrl.length > 400 && coverUrl.startsWith('data:')) {
+      const uploadRes = await api.uploadMedia(coverUrl, `Cover for ${formData.title}`);
+      if (uploadRes.success && uploadRes.data?.public_url) {
+        coverUrl = uploadRes.data.public_url;
+      }
+    }
+
     const payload = {
       ...formData,
-      cover_image_url: formatImageUrl(formData.cover_image_url),
-      audio_url: formatAudioUrl(formData.audio_url),
+      cover_image_url: coverUrl,
+      audio_url: audioUrl,
       tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
     };
 

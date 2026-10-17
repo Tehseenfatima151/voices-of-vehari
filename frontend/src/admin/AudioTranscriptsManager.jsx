@@ -106,9 +106,20 @@ export const AudioTranscriptsManager = () => {
   // Save podcast audio url
   const handleSaveAudioUrl = async (podcast) => {
     try {
+      let urlToSave = (podcast.audio_url || '').trim();
+      // If user has a large data URI (> 400 chars), save it as a media record first so it fits into VARCHAR(500)
+      if (urlToSave.length > 400 && urlToSave.startsWith('data:')) {
+        const uploadRes = await api.uploadMedia(urlToSave, `Audio recording for ${podcast.title}`);
+        if (uploadRes.success && uploadRes.data?.public_url) {
+          urlToSave = uploadRes.data.public_url;
+        }
+      }
       await api.updatePodcast(podcast.id, {
-        audio_url: formatAudioUrl(podcast.audio_url),
+        audio_url: urlToSave,
       });
+      setPodcasts((prev) =>
+        prev.map((p) => (p.id === podcast.id ? { ...p, audio_url: urlToSave } : p))
+      );
       addToast(`Audio for "${podcast.title}" saved successfully!`, 'success');
     } catch (err) {
       addToast('Failed to save audio URL: ' + (err.message || 'Error'), 'error');

@@ -1655,11 +1655,18 @@ export const api = {
 
       // 1. Client-side handling: compress images, or read audio as data URL
       if (file && typeof file === 'object') {
-        const isAudio = file.type && (file.type.startsWith('audio/') || file.name?.endsWith('.mp3') || file.name?.endsWith('.wav') || file.name?.endsWith('.m4a') || file.name?.endsWith('.ogg'));
+        const isAudio = (file.type && (file.type.startsWith('audio/') || file.type.includes('mpeg') || file.type.includes('mp4') || file.type.includes('ogg') || file.type.includes('wav'))) ||
+          file.name?.endsWith('.mp3') || file.name?.endsWith('.wav') || file.name?.endsWith('.m4a') || file.name?.endsWith('.ogg');
         if (isAudio) {
           base64Data = await new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result || '');
+            reader.onload = () => {
+              let res = reader.result || '';
+              if (res.startsWith('data:video/')) {
+                res = res.replace(/^data:video\/[^;]+;/, 'data:audio/mpeg;');
+              }
+              resolve(res);
+            };
             reader.onerror = () => resolve('');
             reader.readAsDataURL(file);
           });
@@ -1667,7 +1674,7 @@ export const api = {
           base64Data = await compressImageFile(file, 1000, 0.82);
         }
       } else if (typeof file === 'string') {
-        base64Data = file;
+        base64Data = file.startsWith('data:video/') ? file.replace(/^data:video\/[^;]+;/, 'data:audio/mpeg;') : file;
       }
 
       // 2. Try serverless /api/upload
@@ -1678,7 +1685,7 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               file: base64Data,
-              name: file.name || `media_${Date.now()}.${file.type?.includes('audio') ? 'mp3' : 'png'}`,
+              name: file.name || `media_${Date.now()}.${file.type?.includes('audio') || file.type?.includes('mpeg') ? 'mp3' : 'png'}`,
               type: file.type || (file.name?.endsWith('.mp3') ? 'audio/mpeg' : 'image/png')
             })
           });
@@ -1698,11 +1705,13 @@ export const api = {
         publicUrl = base64Data;
       }
 
+      const isAudioFile = (file.type && (file.type.startsWith('audio/') || file.type.includes('mpeg'))) || file.name?.endsWith('.mp3');
+
       const mediaRecord = {
         filename: file.name || `media_${Date.now()}`,
         original_name: file.name || 'file',
-        file_type: (file.type && file.type.startsWith('image/')) ? 'image' : ((file.type && file.type.startsWith('audio/')) ? 'audio' : 'document'),
-        mime_type: file.type || 'application/octet-stream',
+        file_type: isAudioFile ? 'audio' : ((file.type && file.type.startsWith('image/')) ? 'image' : 'document'),
+        mime_type: isAudioFile ? 'audio/mpeg' : (file.type || 'application/octet-stream'),
         file_size: file.size || (publicUrl ? publicUrl.length : 0),
         file_path: (file.name || 'upload').slice(0, 250),
         public_url: publicUrl,
@@ -1719,7 +1728,18 @@ export const api = {
           const currentMedia = getStorageItem('vov_cms_media', []);
           setStorageItem('vov_cms_media', [savedItem, ...currentMedia.filter(m => m.id !== savedItem.id)]);
           notifyStorageUpdate();
-          return { success: true, message: 'Media uploaded successfully', data: savedItem, file: savedItem };
+
+          // If the URL is a long base64 string (> 400 chars), return media:id so it fits inside VARCHAR(500) database columns
+          const effectiveUrl = (savedItem.public_url && savedItem.public_url.length > 400)
+            ? `media:${savedItem.id}`
+            : savedItem.public_url;
+
+          return {
+            success: true,
+            message: 'Media uploaded successfully',
+            data: { ...savedItem, public_url: effectiveUrl },
+            file: { ...savedItem, public_url: effectiveUrl }
+          };
         }
       } catch (dbErr) {
         console.warn('Supabase media_files save error:', dbErr);
@@ -1731,11 +1751,15 @@ export const api = {
       setStorageItem('vov_cms_media', [fallbackItem, ...currentMedia]);
       notifyStorageUpdate();
 
+      const fallbackEffectiveUrl = (fallbackItem.public_url && fallbackItem.public_url.length > 400)
+        ? `media:${fallbackItem.id}`
+        : fallbackItem.public_url;
+
       return {
         success: true,
         message: 'Media uploaded successfully',
-        data: fallbackItem,
-        file: fallbackItem
+        data: { ...fallbackItem, public_url: fallbackEffectiveUrl },
+        file: { ...fallbackItem, public_url: fallbackEffectiveUrl }
       };
     } catch (err) {
       return { success: false, message: err.message || 'Upload failed' };

@@ -75,27 +75,6 @@ export default async function handler(req, res) {
           message: 'Uploaded successfully'
         });
       }
-
-      // Fallback to Litterbox if main Catbox is busy
-      const litFd = new FormData();
-      litFd.append('reqtype', 'fileupload');
-      litFd.append('time', '72h');
-      litFd.append('fileToUpload', blob, fileName);
-      const litRes = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-        method: 'POST',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-        },
-        body: litFd
-      });
-      const litUrl = (await litRes.text()).trim();
-      if (litRes.ok && litUrl.startsWith('http')) {
-        return res.status(200).json({
-          success: true,
-          url: litUrl,
-          message: 'Uploaded successfully'
-        });
-      }
     } catch (catboxErr) {
       debugInfo.error = catboxErr.message || String(catboxErr);
       console.warn('Catbox upload attempt failed, falling back to data URL:', catboxErr);

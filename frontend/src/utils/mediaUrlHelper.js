@@ -246,25 +246,35 @@ export const formatImageUrl = (url) => {
  */
 export const formatAudioUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
-  const trimmed = url.trim();
+  let trimmed = url.trim();
   if (trimmed.startsWith('media:')) {
-    if (mediaCache[trimmed]) return mediaCache[trimmed];
-    const id = trimmed.replace('media:', '');
-    if (mediaCache[id]) return mediaCache[id];
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const raw = localStorage.getItem('vov_cms_media');
-        if (raw) {
-          const list = JSON.parse(raw);
-          const found = list.find((m) => String(m.id) === id);
-          if (found && found.public_url) {
-            mediaCache[trimmed] = found.public_url;
-            return found.public_url;
+    if (mediaCache[trimmed]) {
+      trimmed = mediaCache[trimmed];
+    } else {
+      const id = trimmed.replace('media:', '');
+      if (mediaCache[id]) {
+        trimmed = mediaCache[id];
+      } else if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('vov_cms_media');
+          if (raw) {
+            const list = JSON.parse(raw);
+            const found = list.find((m) => String(m.id) === id);
+            if (found && found.public_url) {
+              mediaCache[trimmed] = found.public_url;
+              trimmed = found.public_url;
+            }
           }
-        }
-      } catch (_) {}
+        } catch (_) {}
+      }
     }
   }
+
+  // Ensure any base64 audio mislabeled as video/mpeg by Windows Chrome is converted to audio/mpeg
+  if (trimmed.startsWith('data:video/mpeg') || trimmed.startsWith('data:video/')) {
+    trimmed = trimmed.replace(/^data:video\/[^;]+;/, 'data:audio/mpeg;');
+  }
+
   return trimmed;
 };
 
