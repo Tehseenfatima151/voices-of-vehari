@@ -43,7 +43,7 @@ export const AudioPlayer = ({
   if (isDrive && driveId) {
     return (
       <div
-        className="audio"
+        className="audio audio-drive-embed"
         style={{
           padding: '12px 14px',
           background: '#f8fafc',
@@ -58,7 +58,7 @@ export const AudioPlayer = ({
               <strong style={{ fontSize: '13.5px', color: 'var(--navy)', display: 'block', lineHeight: 1.2 }}>
                 {title ? `${title}` : 'Episode Audio Recording'}
               </strong>
-              <span style={{ fontSize: '11px', color: 'var(--teal)', fontWeight: 600 }}>
+              <span style={{ fontSize: '11px', color: '#0984e3', fontWeight: 600 }}>
                 Google Drive Audio Stream
               </span>
             </div>
@@ -80,20 +80,33 @@ export const AudioPlayer = ({
             Open in Drive ↗
           </a>
         </div>
-        <iframe
-          src={`https://drive.google.com/file/d/${driveId}/preview`}
-          width="100%"
-          height="54"
-          frameBorder="0"
-          allow="autoplay"
+        <div
           style={{
-            borderRadius: '10px',
+            position: 'relative',
+            width: '100%',
+            height: '165px',
+            borderRadius: '12px',
+            overflow: 'hidden',
             border: '1px solid #e2e8f0',
-            display: 'block',
-            background: '#ffffff',
+            background: '#000000',
           }}
-          title="Google Drive Audio Player"
-        />
+        >
+          <iframe
+            src={`https://drive.google.com/file/d/${driveId}/preview`}
+            width="100%"
+            height="165"
+            frameBorder="0"
+            allow="autoplay"
+            style={{
+              width: '100%',
+              height: '165px',
+              border: 0,
+              display: 'block',
+              background: '#000000',
+            }}
+            title={title || 'Google Drive Audio Stream'}
+          />
+        </div>
       </div>
     );
   }
