@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { isGoogleDriveUrl, extractGoogleDriveId } from '../utils/mediaUrlHelper';
+import React, { useState, useRef, useEffect } from 'react';
+import { isGoogleDriveUrl, extractGoogleDriveId, formatAudioUrl } from '../utils/mediaUrlHelper';
+import { resolveMediaReference } from '../services/api';
 
 export const AudioPlayer = ({
   src,
@@ -7,10 +8,30 @@ export const AudioPlayer = ({
   placeholderText = 'Connect the final recording here'
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState(() => formatAudioUrl(src));
   const audioRef = useRef(null);
 
+  // Asynchronously resolve media: references if not already cached
+  useEffect(() => {
+    let active = true;
+    const resolve = async () => {
+      const raw = (src || '').trim();
+      if (raw.startsWith('media:')) {
+        const full = await resolveMediaReference(raw);
+        if (active) setResolvedSrc(formatAudioUrl(full));
+      } else {
+        if (active) setResolvedSrc(formatAudioUrl(raw));
+      }
+    };
+    resolve();
+    return () => {
+      active = false;
+    };
+  }, [src]);
+
   // If no audio is attached yet, display the placeholder
-  if (!src || typeof src !== 'string' || !src.trim()) {
+  const activeAudioUrl = (resolvedSrc || src || '').trim();
+  if (!activeAudioUrl) {
     return (
       <div className="audio">
         <div className="audio-row">
@@ -35,7 +56,7 @@ export const AudioPlayer = ({
     );
   }
 
-  const trimmed = src.trim();
+  const trimmed = activeAudioUrl;
   const isDrive = isGoogleDriveUrl(trimmed);
   const driveId = isDrive ? extractGoogleDriveId(trimmed) : null;
 
@@ -139,9 +160,11 @@ export const AudioPlayer = ({
           {isPlaying ? '❚❚' : '▶'}
         </button>
         <div>
-          <strong>{isPlaying ? 'Playing episode recording...' : (title || 'Episode Audio')}</strong>
-          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>
-            Click to {isPlaying ? 'pause' : 'play recording'}
+          <strong style={{ display: 'block', fontSize: '14px', color: 'var(--navy)' }}>
+            {isPlaying ? 'Playing episode recording...' : (title || 'Episode Audio')}
+          </strong>
+          <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '2px' }}>
+            {isPlaying ? 'Click to pause' : (trimmed.startsWith('media:') ? 'Loading audio...' : 'Click to play recording')}
           </div>
         </div>
         <div className={`wave ${isPlaying ? 'playing' : ''}`}></div>
@@ -151,6 +174,11 @@ export const AudioPlayer = ({
         src={trimmed}
         onEnded={() => setIsPlaying(false)}
         onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+        onError={(e) => {
+          console.warn('Audio playback error:', e);
+          setIsPlaying(false);
+        }}
         preload="metadata"
       />
     </div>

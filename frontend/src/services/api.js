@@ -2,7 +2,7 @@ import axios from 'axios';
 import fallbackData from './fallbackData';
 import { setMediaCache, compressImageFile } from '../utils/mediaUrlHelper';
 
-const resolveMediaReference = async (url) => {
+export const resolveMediaReference = async (url) => {
   if (!url || typeof url !== 'string' || !url.startsWith('media:')) return url;
   const id = url.replace('media:', '');
   try {
@@ -468,7 +468,18 @@ export const api = {
       // Podcasts
       let podcasts = getStorageItem('vov_cms_podcasts', fallbackData.podcasts);
       if (podRes.status === 'fulfilled' && Array.isArray(podRes.value.data) && podRes.value.data.length > 0) {
-        podcasts = podRes.value.data.map(mapPodcastFromSupabase);
+        podcasts = await Promise.all(
+          podRes.value.data.map(async (p) => {
+            const mapped = mapPodcastFromSupabase(p);
+            if (mapped.audio_url && mapped.audio_url.startsWith('media:')) {
+              mapped.audio_url = await resolveMediaReference(mapped.audio_url);
+            }
+            if (mapped.cover_image_url && mapped.cover_image_url.startsWith('media:')) {
+              mapped.cover_image_url = await resolveMediaReference(mapped.cover_image_url);
+            }
+            return mapped;
+          })
+        );
         setStorageItem('vov_cms_podcasts', podcasts);
       }
 
@@ -958,7 +969,18 @@ export const api = {
     try {
       const res = await supabaseClient.get('/podcasts?select=*&order=sort_order.asc,created_at.desc');
       if (Array.isArray(res.data) && res.data.length > 0) {
-        const list = res.data.map(mapPodcastFromSupabase);
+        const list = await Promise.all(
+          res.data.map(async (p) => {
+            const mapped = mapPodcastFromSupabase(p);
+            if (mapped.audio_url && mapped.audio_url.startsWith('media:')) {
+              mapped.audio_url = await resolveMediaReference(mapped.audio_url);
+            }
+            if (mapped.cover_image_url && mapped.cover_image_url.startsWith('media:')) {
+              mapped.cover_image_url = await resolveMediaReference(mapped.cover_image_url);
+            }
+            return mapped;
+          })
+        );
         setStorageItem('vov_cms_podcasts', list);
         return list;
       }
